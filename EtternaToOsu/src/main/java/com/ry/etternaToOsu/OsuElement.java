@@ -55,7 +55,8 @@ public enum OsuElement {
             return content.replaceFirst(
                     Pattern.quote(me.get()),
                     Matcher.quoteReplacement(me.get().replaceFirst(
-                            me.get().substring(x), ":" + replacement))
+                            Pattern.quote(me.get().substring(x)),
+                            Matcher.quoteReplacement(":" + replacement)))
             );
         } else {
             return content;
