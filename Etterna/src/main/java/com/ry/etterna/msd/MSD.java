@@ -8,10 +8,12 @@ import lombok.ToString;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
 /**
  * Java class created on 12/04/2022 for usage in project FunctionalUtils.
@@ -139,7 +141,7 @@ public class MSD {
     /**
      * Interpolates this MSD data with another producing another MSD of which is
      * the culmination of difference between each skill. This exists to
-     * calculate sandwiched rates such as 0.5 increments i.e., fn(1.0, 1.1) =
+     * calculate sandwiched rates such as 0.05 increments i.e., fn(1.0, 1.1) =
      * 1.05.
      *
      * @param other The other MSD data to interpolate between.
@@ -194,5 +196,82 @@ public class MSD {
         final BigDecimal x = getSkill(skill);
         if ((x == NAN) || (x == REASONABLE_LIMIT)) return Optional.empty();
         return Optional.of(x);
+    }
+
+    /**
+     * @param skill The skill to check for the specified range.
+     * @param min The minimum (inclusive).
+     * @param max The maximum (inclusive).
+     * @return {@code true} if the value of the skillset is min, max, or a value
+     * between min and max.
+     */
+    public boolean inRange(final SkillSet skill,
+                           final String min,
+                           final String max) {
+        final BigDecimal mi = new BigDecimal(min, MathContext.DECIMAL64);
+        final BigDecimal ma = new BigDecimal(max, MathContext.DECIMAL64);
+        final BigDecimal sk = getSkill(skill);
+
+        // (sk >= min) && (sk <= max)
+        return sk.compareTo(mi) >= 0 && sk.compareTo(ma) <= 0;
+    }
+
+    /**
+     * @return {@code true} if the overall MSD is within the range 18 to 35.
+     */
+    public boolean inRange() {
+        return inRange(SkillSet.OVERALL, "18", "35");
+    }
+
+    /**
+     * @return The highest skillset which is not Overall or Stamina.
+     */
+    public SkillSet getBestSkill() {
+        return Stream.of(SkillSet.values())
+                .filter(x -> x != SkillSet.OVERALL && x != SkillSet.STAMINA)
+                .max(Comparator.comparing(this::getSkill))
+                .orElseThrow(RuntimeException::new);
+    }
+
+    /**
+     * Creates a search tag for the Overall MSD, that is, for values mi to ma in
+     * increments of inc test if MSD>v, providing the appropriate search
+     * string.
+     *
+     * @param mi The min value (Start).
+     * @param ma The max value (End).
+     * @param inc The increment (V + INC).
+     * @return MSD Filter tags, minimum of 2 comma delimited arguments, MSD>?
+     * and SKILL!.
+     */
+    public String getMsdFilterTag(final String mi,
+                                  final String ma,
+                                  final String inc) {
+        final BigDecimal overall = getSkill(SkillSet.OVERALL);
+        final BigDecimal max = new BigDecimal(ma, MathContext.DECIMAL64);
+        final BigDecimal increment = new BigDecimal(inc, MathContext.DECIMAL64);
+        BigDecimal val = new BigDecimal(mi, MathContext.DECIMAL64);
+
+        final StringJoiner sj = new StringJoiner(",");
+        while (val.compareTo(max) <= 0) {
+
+            // 2.12345 -> 2.12; 2.001 -> 2
+            final BigDecimal clamp = val.setScale(2, RoundingMode.HALF_UP)
+                    .stripTrailingZeros();
+
+            switch (overall.compareTo(val)) {
+                case 1 -> sj.add("MSD>" + clamp.toPlainString());
+                case -1 -> sj.add("MSD<" + clamp.toPlainString());
+                case 0 -> sj.add("MSD==" + clamp.toPlainString());
+            }
+
+            // Increment
+            val = val.add(increment, MathContext.DECIMAL64);
+        }
+
+        if (overall == NAN) sj.add("MSD==NaN");
+        sj.add(getBestSkill().getAcronym() + "!");
+        sj.add("MSD>?");
+        return sj.toString();
     }
 }
