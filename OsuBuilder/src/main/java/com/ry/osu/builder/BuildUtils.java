@@ -106,9 +106,6 @@ public final class BuildUtils {
                 .toString());
         tp.setVolume(HitObject.Volume.HALF.getLevel());
 
-        tp.setHitSample(HitObject.SampleSet.NORMAL);
-        tp.setIndex(HitObject.Sound.FINISH);
-
         return tp;
     }
 
@@ -146,6 +143,11 @@ public final class BuildUtils {
         ho.setManiaColumn(note.getColumn(), numColumns);
         ho.setY(end == null ? 0 : holdYPos);
         ho.setType(type);
+
+        // Set base timing sounds
+        ho.setHitSample(HitObject.SampleSet.NORMAL);
+        ho.setHitSound(HitObject.Sound.FINISH);
+        ho.setVolume(HitObject.Volume.FULL);
 
         return ho;
     }

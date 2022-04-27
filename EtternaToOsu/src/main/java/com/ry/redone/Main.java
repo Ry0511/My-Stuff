@@ -59,7 +59,7 @@ public class Main {
 
     public static final File CACHE_FILE = new File("C:\\Games\\Etterna\\Cache\\cache.db");
     public static final File SONGS_DIR = new File("C:\\Games\\Etterna\\Songs");
-    public static final File OUTPUT_DIR = new File("C:\\Users\\-Ry\\Desktop\\Output-dir");
+    public static final File OUTPUT_DIR = new File("D:\\Program Files x86\\osu!\\Songs\\- - - - - Convert Packs (28-04-2022)");
 
 
     public static void main(final String[] args) throws SQLException {
