@@ -128,13 +128,17 @@ public final class BuildUtils {
                 .setScale(0, RoundingMode.UNNECESSARY);
 
         // Clamp end time
-        HitObject.Type type = HitObject.Type.HIT;
+        final HitObject.Type type;
         BigDecimal end = note.getEndTime();
-        if (end != null) {
-            end = end.multiply(MILLIS_FACTOR, MathContext.DECIMAL64)
-                    .setScale(0, RoundingMode.UNNECESSARY);
-            ho.setEndTime(end.toString());
-            ho.setType(HitObject.Type.MANIA_HOLD);
+        if (note.getEndNote() != null) {
+            ho.setEndTime(note.getEndTime()
+                    .multiply(MILLIS_FACTOR, MathContext.DECIMAL64)
+                    .toBigInteger()
+                    .toString()
+            );
+            type = HitObject.Type.MANIA_HOLD;
+        } else {
+            type = HitObject.Type.HIT;
         }
 
         // Set internals
@@ -149,7 +153,7 @@ public final class BuildUtils {
     /**
      * Lazy container for data.
      */
-    private record TimingContainer(
-            List<HitObject> hitObjects, List<TimingPoint> timingPoints) {
+    private record TimingContainer(List<HitObject> hitObjects,
+                                   List<TimingPoint> timingPoints) {
     }
 }
