@@ -156,7 +156,7 @@ public class HitObject {
                 getTime(),
                 getType(),
                 getHitSound(),
-                getEndTime() == null ? "" : getEndTime() + ",",
+                getEndTime() == null ? "" : getEndTime() + ":",
                 String.join(":", getHitSample())
         );
     }
@@ -169,7 +169,7 @@ public class HitObject {
     @AllArgsConstructor
     public enum Type {
         // Probably right lol
-        HIT(Integer.parseInt("0", 2)),
+        HIT(Integer.parseInt("1", 2)),
         SLIDER(Integer.parseInt("00000010", 2)),
         SPINNER(Integer.parseInt("00001000", 2)),
         MANIA_HOLD(Integer.parseInt("10000000", 2));

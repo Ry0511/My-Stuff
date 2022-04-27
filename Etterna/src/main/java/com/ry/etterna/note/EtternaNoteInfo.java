@@ -91,6 +91,12 @@ public class EtternaNoteInfo {
     private final boolean isDanceSingle;
 
     /**
+     * The difficulty number of this chart.
+     */
+    @Setter
+    private int difficultyIndex;
+
+    /**
      * Loads the Note Info from the RAW string.
      *
      * @param info The string to load from.

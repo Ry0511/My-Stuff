@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.StringJoiner;
 
 import static com.ry.osu.builder.Template.TemplateElement.ARTIST;
+import static com.ry.osu.builder.Template.TemplateElement.AUDIO_FILE;
 import static com.ry.osu.builder.Template.TemplateElement.BG_FILE;
 import static com.ry.osu.builder.Template.TemplateElement.CREATOR;
 import static com.ry.osu.builder.Template.TemplateElement.HIT_OBJECTS;
@@ -74,6 +75,12 @@ public class BuildableOsuFile {
     String backgroundFile = "";
 
     /**
+     * The audio file for this chart.
+     */
+    @Builder.Default
+    String audioFile = "";
+
+    /**
      * Timing points for this chart, defaults to the empty list.
      */
     @Builder.Default
@@ -99,6 +106,7 @@ public class BuildableOsuFile {
         s = SOURCE.replaceMe(s, getSource());
         s = TAGS.replaceMe(s, getTags());
         s = BG_FILE.replaceMe(s, getBackgroundFile());
+        s = AUDIO_FILE.replaceMe(s, getAudioFile());
 
         // Timing points
         final StringJoiner tpSj = new StringJoiner(System.lineSeparator());

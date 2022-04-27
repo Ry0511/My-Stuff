@@ -11,6 +11,7 @@
         <module name="FFMPEG" />
         <module name="Etterna" />
         <module name="EtternaToOsu" />
+        <module name="OsuBuilder" />
       </profile>
     </annotationProcessing>
   </component>

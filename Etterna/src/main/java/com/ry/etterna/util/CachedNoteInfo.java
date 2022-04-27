@@ -6,10 +6,8 @@ import com.ry.etterna.db.CacheStepsResult;
 import com.ry.etterna.msd.MSD;
 import com.ry.etterna.note.EtternaNoteInfo;
 import com.ry.etterna.reader.EtternaTiming;
-import com.ry.ffmpeg.FFMPEGUtils;
 import lombok.Data;
 
-import java.io.File;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -17,8 +15,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Future;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 
 
 /**
@@ -44,16 +42,6 @@ public class CachedNoteInfo {
      * Half rate increment.
      */
     private static final BigDecimal HALF_RATE = new BigDecimal("0.05", C);
-
-    /**
-     * The minimum rate value.
-     */
-    private static final BigDecimal MIN_RATE = new BigDecimal("0.70", C);
-
-    /**
-     * Maximum rate value.
-     */
-    private static final BigDecimal MAX_RATE = new BigDecimal("2.00", C);
 
     /**
      * Cache information for the Note Info.
@@ -164,87 +152,78 @@ public class CachedNoteInfo {
         return Optional.empty();
     }
 
-    /**
-     * @param destPath The output destination path, this will always have the
-     * .jpg suffix.
-     * @return Future of the task or {@code null} if the background file doesn't
-     * exist.
-     */
-    public Future<Process> convertImage(final String destPath) {
-        final Optional<File> opt = getEtternaFile().getBackgroundFile();
-
-        return opt.map(file -> FFMPEGUtils.compressImage(
-                file.getAbsolutePath(),
-                destPath
-        )).orElse(null);
-    }
+    ///////////////////////////////////////////////////////////////////////////
+    // Iterating rates
+    ///////////////////////////////////////////////////////////////////////////
 
     /**
-     * Creates and starts an audio conversion task that will take the default
-     * audio file and produce a new file at the provided destination path with
-     * the required Delay.
-     *
-     * @param destinationPath The file path to create for the new audio file.
-     * @return Future of the task or {@code null} if the Audio file doesn't
-     * exist.
+     * @param min Min (Start).
+     * @param max Max (End).
+     * @param inc Increment.
+     * @param rateHandle Action.
      */
-    public Future<Process> convertAudio(final String destinationPath) {
-        final Optional<File> optAudio = getInfo().getParent().getAudioFile();
-        final Optional<BigDecimal> offset = getInfo().getParent().getOffset();
+    private void forEachRateInRange(final String min,
+                                    final String max,
+                                    final String inc,
+                                    final Consumer<BigDecimal> rateHandle) {
+        BigDecimal i = new BigDecimal(min);
+        final BigDecimal ma = new BigDecimal(max);
+        final BigDecimal increment = new BigDecimal(inc);
 
-        if (optAudio.isPresent() && offset.isPresent()) {
-            return FFMPEGUtils.delayAudio(
-                    offset.get(),
-                    optAudio.get().getAbsolutePath(),
-                    destinationPath
-            );
-        }
-
-        return null;
-    }
-
-    /**
-     * For each rate 0.70, 0.75, ..., 2.0 apply the given action.
-     *
-     * @param action The action to apply for every rate.
-     */
-    public void forEachRate(final RatedChartHandler action) {
-        final EtternaTiming normal = getInfo().getParent().getTimingInfo();
-        BigDecimal v = MIN_RATE;
-
-        while (v.compareTo(MAX_RATE) <= 0) {
-            final BigDecimal clone = v;
-            getMSDForRate(v.toString()).ifPresent(msd -> {
-                getInfo().timeNotesWith(normal.rated(clone));
-                action.accept(this, clone, msd);
-            });
-
-            v = v.add(HALF_RATE, MathContext.DECIMAL64);
+        while (i.compareTo(ma) <= 0) {
+            rateHandle.accept(i);
+            i = i.add(increment, MathContext.DECIMAL64);
         }
     }
 
     /**
-     * Functionally the same as {@link #forEachRate(RatedChartHandler)} however
-     * this one will only update the Info if the given predicate yields true.
+     * For each rate in range which adheres to the MSD Filter rule, apply the
+     * given action.
      *
-     * @param action The action to apply for every rate.
+     * @param min The minimum rate.
+     * @param max The maximum rate.
+     * @param msdFilter The MSD Filter, first argument is the 1.0 MSD, and the
+     * second one is the k-rate MSD.
+     * @param action The action to apply if the filter is true.
      */
-    public void forEachRate(final Predicate<MSD> condition,
+    public void forEachRate(final String min,
+                            final String max,
+                            final BiPredicate<MSD, MSD> msdFilter,
                             final RatedChartHandler action) {
-        final EtternaTiming normal = getInfo().getParent().getTimingInfo();
-        BigDecimal v = MIN_RATE;
+        final MSD normal
+                = getMSDForRate("1.0").orElseThrow(RuntimeException::new);
+        final EtternaTiming baseTiming = getEtternaFile().getTimingInfo();
 
-        while (v.compareTo(MAX_RATE) <= 0) {
-            final BigDecimal clone = v;
-            getMSDForRate(v.toString()).ifPresent(msd -> {
-                if (condition.test(msd)) {
-                    getInfo().timeNotesWith(normal.rated(clone));
-                    action.accept(this, clone, msd);
+        forEachRateInRange(min, max, "0.05", rate -> {
+            getMSDForRate(rate.toPlainString()).ifPresent(ratedMSD -> {
+                if (msdFilter.test(normal, ratedMSD)) {
+                    this.info.timeNotesWith(baseTiming.rated(rate));
+                    action.accept(this, rate, ratedMSD);
                 }
             });
+        });
+    }
 
-            v = v.add(HALF_RATE, MathContext.DECIMAL64);
-        }
+    /**
+     * For each rate 0.7 to 2.0 in 0.05 increments.
+     *
+     * @param filter The MSD Filter.
+     * @param action The action to apply.
+     */
+    public void forEachRateFull(final BiPredicate<MSD, MSD> filter,
+                                final RatedChartHandler action) {
+        forEachRate("0.7", "2.0", filter, action);
+    }
+
+    /**
+     * For each rate 0.7 to 1.5 in 0.05 increments.
+     *
+     * @param filter The MSD Filter.
+     * @param action The action to apply.
+     */
+    public void forEachRateHalf(final BiPredicate<MSD, MSD> filter,
+                                final RatedChartHandler action) {
+        forEachRate("0.7", "1.5", filter, action);
     }
 
     /**

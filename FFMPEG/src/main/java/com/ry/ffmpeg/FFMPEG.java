@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -18,7 +19,8 @@ import java.util.concurrent.TimeUnit;
 public final class FFMPEG {
 
     /**
-     * Static FFMPEG instance which utilises a work stealing pot.
+     * Static FFMPEG instance which utilises a work stealing pot with an
+     * unbounded level of parallelism.
      */
     public static final FFMPEG INSTANCE
             = new FFMPEG(Executors.newWorkStealingPool());
@@ -26,7 +28,6 @@ public final class FFMPEG {
     /**
      * The ffmpeg command executor.
      */
-    @Getter(AccessLevel.PRIVATE)
     private final ExecutorService executor;
 
     /**
@@ -45,19 +46,42 @@ public final class FFMPEG {
     }
 
     /**
-     * Executes the provided command under the currently stored ffmpeg header.
+     * Creates a CLI Task which operates under with some FFMPEG instance.
+     *
+     * @param mpeg The ffmpeg reference.
+     * @param args The command arguments.
+     * @return New task which is [ffmpeg, args[0], args[k]]
+     */
+    private static Task create(final String mpeg,
+                               final String[] args) {
+        final String[] cmd = new String[args.length + 1];
+        cmd[0] = FFMPEGUtils.quote(mpeg);
+        System.arraycopy(args, 0, cmd, 1, args.length);
+
+        return new Task(cmd);
+    }
+
+    /**
+     * Executes the provided command asynchronously.
      *
      * @param args The ffmpeg command array.
      * @return Future of the currently executing task.
      */
     public Future<Process> exec(final String... args) {
-        return executor.submit(() -> {
-            final String[] cmd = new String[args.length + 1];
-            cmd[0] = FFMPEGUtils.quote(getFfmpeg());
-            System.arraycopy(args, 0, cmd, 1, args.length);
-            final Task t = new Task(cmd);
-            return t.startAndWait();
-        });
+        return executor.submit(() -> create(getFfmpeg(), args).startAndWait());
+    }
+
+    /**
+     * Executes the provided command and blocks until the command returns.
+     *
+     * @param args The command to run.
+     * @return The completed process.
+     * @throws IOException          If any occur.
+     * @throws InterruptedException If while waiting, interrupted.
+     */
+    public Process execAndWait(final String... args)
+            throws IOException, InterruptedException {
+        return create(getFfmpeg(), args).startAndWait();
     }
 
     /**

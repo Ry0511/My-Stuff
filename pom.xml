@@ -13,6 +13,7 @@
         <module>VSRG</module>
         <module>EtternaToOsu</module>
         <module>FFMPEG</module>
+        <module>OsuBuilder</module>
     </modules>
 
     <properties>

@@ -91,7 +91,12 @@ public class EtternaFile {
         this.smFile = file;
         this.timingInfo = reader.getTimingInfo();
         this.noteInfo = reader.getNoteInfo();
-        this.noteInfo.forEach(x -> x.setParent(this));
+
+        for (int i = 0; i < noteInfo.size(); ++i) {
+            final var v = noteInfo.get(i);
+            v.setParent(this);
+            v.setDifficultyIndex(i);
+        }
 
         // Load the basic string properties
         properties = new HashMap<>();

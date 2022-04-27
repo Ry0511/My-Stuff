@@ -13,7 +13,6 @@ import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Java class created on 23/04/2022 for usage in project FunctionalUtils.
@@ -24,39 +23,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class FFMPEGUtils {
-
-    /**
-     * Unique identifier value generator.
-     */
-    public static final AtomicLong ID = new AtomicLong();
-
-    /**
-     * Constant used as a template for input files.
-     */
-    private static final String INPUT = "INPUT";
-
-    /**
-     * Constant used as a template for output files.
-     */
-    private static final String OUTPUT = "OUTPUT";
-
-    /**
-     * Negative offset command which applies a negative delay.
-     */
-    private static final CommandBuilder NEGATIVE_OFFSET = CommandBuilder.builder().add(
-            "-y", "-i", INPUT,
-            "-ss", "DELAY",
-            OUTPUT
-    );
-
-    /**
-     * Positive offset command which applies a positive delay.
-     */
-    private static final CommandBuilder POSITIVE_OFFSET = CommandBuilder.builder().add(
-            "-y", "-i", INPUT,
-            "-af", "\"adelay=DELAY\"",
-            OUTPUT
-    );
 
     /**
      * Default math context used for scaling.
@@ -74,42 +40,40 @@ public final class FFMPEGUtils {
     ///////////////////////////////////////////////////////////////////////////
 
     /**
-     * Async audio delay for both Positive and Negative offsets.
+     * Creates a delayed audio command.
      *
-     * @param delay The delay to apply in Seconds.
+     * @param delay The delay to apply.
      * @param input The input file to delay.
-     * @param output The output file destination.
-     * @return Future representing the tasks current state.
+     * @param output The output file to produce.
+     * @return Array of FFMPEG CLI arguments.
      */
-    public static Future<Process> delayAudio(final BigDecimal delay,
-                                             final String input,
-                                             final String output) {
+    public static String[] delayAudio(final BigDecimal delay,
+                                      final String input,
+                                      final String output) {
 
         // Positive Offset (Applies to 4 audio channels excess doesn't matter)
-        if (delay.compareTo(BigDecimal.ZERO) > 0) {
+        if (delay.signum() > -1) {
             final String s = delay.multiply(MILLIS_FACTOR, C)
-                    .setScale(0, RoundingMode.UNNECESSARY)
-                    .toPlainString();
+                    .toBigInteger()
+                    .toString();
             final String delayStr = String.format("%s|%s|%s|%s", s, s, s, s);
 
             // Convert audio
-            return FFMPEG.INSTANCE.exec(
-                    POSITIVE_OFFSET.clone()
-                            .replaceFirst(INPUT, quote(input))
-                            .replaceFirst(OUTPUT, quote(output))
-                            .replaceFirst("DELAY", delayStr)
-                            .build()
-            );
+            return CommandBuilder.builder()
+                    .add("-y", "-i", quote(input))
+                    .add("-af", quote("adelay=" + delayStr))
+                    .add("-map", "0:a")
+                    .add(quote(output))
+                    .build();
 
             // Negative offset
         } else {
-            return FFMPEG.INSTANCE.exec(
-                    NEGATIVE_OFFSET.clone()
-                            .replaceFirst(INPUT, quote(input))
-                            .replaceFirst(OUTPUT, quote(output))
-                            .replaceFirst("DELAY", delay.toPlainString())
-                            .build()
-            );
+            return CommandBuilder.builder()
+                    .add("-y", "-i", quote(input))
+                    .add("-ss", delay.negate().toPlainString())
+                    .add("-map", "0:a")
+                    .add(quote(output))
+                    .build();
         }
     }
 
@@ -127,7 +91,7 @@ public final class FFMPEGUtils {
         final String ext = name.substring(name.lastIndexOf("."));
 
         final Path tmp = Files.createTempFile(
-                ID.getAndIncrement() + "-C_AUD-",
+                "Compress-Audio-Task",
                 ext
         );
         FileUtils.copyFile(input, tmp.toFile());
@@ -165,31 +129,28 @@ public final class FFMPEGUtils {
      * @return Future representing this tasks state.
      * @implNote The NC mode, although works should still be tweaked.
      */
-    public static Future<Process> rateAudio(final String input,
-                                            final String rate,
-                                            final boolean isNC,
-                                            final String output) {
-
+    public static String[] rateAudio(final String input,
+                                     final String rate,
+                                     final boolean isNC,
+                                     final String output) {
         if (!isNC) {
-            return FFMPEG.INSTANCE.exec(CommandBuilder.builder().add(
-                            "-y", "-i", quote(input),
-                            "-filter:a",
-                            quote("atempo=" + rate),
-                            "-vn",
-                            quote(output)
-                    ).build()
-            );
+            return CommandBuilder.builder().add(
+                    "-y", "-i", quote(input),
+                    "-filter:a",
+                    quote("atempo=" + rate),
+                    "-vn",
+                    quote(output)
+            ).build();
 
             // Primitive Nightcore
         } else {
-            return FFMPEG.INSTANCE.exec(CommandBuilder.builder().add(
-                            "-y", "-i", quote(input),
-                            "-filter:a",
-                            String.format("asetrate=44100*%s", rate),
-                            "-vn",
-                            quote(output)
-                    ).build()
-            );
+            return CommandBuilder.builder().add(
+                    "-y", "-i", quote(input),
+                    "-filter:a",
+                    String.format("asetrate=44100*%s", rate),
+                    "-vn",
+                    quote(output)
+            ).build();
         }
     }
 

@@ -18,6 +18,8 @@ import java.util.List;
  * Java class created on 22/04/2022 for usage in project FunctionalUtils.
  *
  * @author -Ry
+ * @deprecated Use {@link CachedNoteInfo#from(EtternaFile, CacheDB)} as it's a
+ * lot more direct.
  */
 @Data
 @Setter(AccessLevel.PRIVATE)

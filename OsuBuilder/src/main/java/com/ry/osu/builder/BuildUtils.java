@@ -69,7 +69,7 @@ public final class BuildUtils {
             // Load timing data
             final BigDecimal v = row.getBpm().getValue();
             if (!bpm.isPresent() || (bpm.getValue().compareTo(v) != 0)) {
-                bpm.setValue(row.getStartTime());
+                bpm.setValue(row.getBpm().getValue());
                 timing.add(bpmToTimingPoint(measure, row));
             }
 
@@ -100,10 +100,14 @@ public final class BuildUtils {
         tp.setBeatLength(bpm.getValue());
         tp.setMeter(m.size());
         tp.setUnInherited(true);
-        tp.setTime(r.getStartTime().toString());
+        tp.setTime(r.getStartTime()
+                .multiply(MILLIS_FACTOR, MathContext.DECIMAL64)
+                .setScale(0, RoundingMode.UNNECESSARY)
+                .toString());
         tp.setVolume(HitObject.Volume.HALF.getLevel());
-        tp.setHitSample(HitObject.SampleSet.SOFT);
-        tp.setIndex(HitObject.Sound.CLAP);
+
+        tp.setHitSample(HitObject.SampleSet.NORMAL);
+        tp.setIndex(HitObject.Sound.FINISH);
 
         return tp;
     }
@@ -138,9 +142,6 @@ public final class BuildUtils {
         ho.setManiaColumn(note.getColumn(), numColumns);
         ho.setY(end == null ? 0 : holdYPos);
         ho.setType(type);
-        ho.setVolume(HitObject.Volume.FULL);
-        ho.setHitSample(HitObject.SampleSet.SOFT);
-        ho.setIndex(HitObject.Sound.WHISTLE);
 
         return ho;
     }

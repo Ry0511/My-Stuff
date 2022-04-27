@@ -43,6 +43,15 @@ public class NamedFileStructure {
     }
 
     /**
+     * Sets the root file to the provided file.
+     *
+     * @param rootFile The root f
+     */
+    public void setRoot(final File rootFile) {
+        addFile(ROOT_ID, rootFile);
+    }
+
+    /**
      * Gets a file by its ID.
      *
      * @param id The ID of the file to get.
@@ -64,34 +73,17 @@ public class NamedFileStructure {
     }
 
     /**
-     * Adds a file by appending the extra paths to the absolute path of the File
-     * denoted by the Append-ID.
-     *
-     * @param appendID The file to append a path to.
-     * @param id The id of the new file.
-     * @param pathExtensions The extra paths, that is: AppendID-File/ext[0]/ext[1]/.../ext[k]
-     */
-    public void addFile(@NonNull final String appendID,
-                        @NonNull final String id,
-                        @NonNull final String... pathExtensions) {
-
-        final StringJoiner sj = new StringJoiner("/");
-        sj.add(getFile(appendID).getAbsolutePath());
-        Arrays.stream(pathExtensions).forEach(sj::add);
-
-        addFile(id, new File(sj.toString()));
-    }
-
-    /**
-     * Same as {@link #addFile(String, String, String...)} except the first ID
-     * is fixed to {@link #ROOT_ID}.
-     *
      * @param id The id of the new file.
      * @param pathExtensions The file path extensions.
      */
     public void addFile(@NonNull final String id,
                         @NonNull final String... pathExtensions) {
-        addFile(ROOT_ID, id, pathExtensions);
+
+        final StringJoiner sj = new StringJoiner("/");
+        sj.add(getFile(ROOT_ID).getAbsolutePath());
+        Arrays.stream(pathExtensions).forEach(sj::add);
+
+        addFile(id, new File(sj.toString()));
     }
 
     /**

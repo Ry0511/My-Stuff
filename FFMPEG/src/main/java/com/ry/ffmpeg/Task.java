@@ -54,6 +54,12 @@ public class Task {
      */
     public Process startAndWait() throws InterruptedException, IOException {
         final Process p = pb.start();
+
+        final var in = in(p);
+        while (in.readLine() != null) {
+            // ignored
+        }
+        in.close();
         p.waitFor();
         return p;
     }
