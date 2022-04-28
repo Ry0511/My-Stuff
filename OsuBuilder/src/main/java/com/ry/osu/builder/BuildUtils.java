@@ -102,7 +102,7 @@ public final class BuildUtils {
         tp.setUnInherited(true);
         tp.setTime(r.getStartTime()
                 .multiply(MILLIS_FACTOR, MathContext.DECIMAL64)
-                .setScale(0, RoundingMode.UNNECESSARY)
+                .toBigInteger()
                 .toString());
         tp.setVolume(HitObject.Volume.HALF.getLevel());
 
@@ -144,8 +144,8 @@ public final class BuildUtils {
         ho.setType(type);
 
         // Set base timing sounds
-        ho.setHitSample(HitObject.SampleSet.NORMAL);
-        ho.setHitSound(HitObject.Sound.FINISH);
+        ho.setSampleSet(HitObject.SampleSet.NORMAL);
+        ho.setSampleSet(HitObject.Sound.FINISH);
         ho.setVolume(HitObject.Volume.FULL);
 
         return ho;
