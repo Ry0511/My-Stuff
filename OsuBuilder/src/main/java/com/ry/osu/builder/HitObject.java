@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * Java class created on 24/04/2022 for usage in project FunctionalUtils.
@@ -60,8 +61,8 @@ public class HitObject {
     };
 
     /**
-     * Sets X position to the correct pixel value based on the provided
-     * mania note column.
+     * Sets X position to the correct pixel value based on the provided mania
+     * note column.
      *
      * @param col The desired note column (Zero based).
      * @param columns The total number of columns.
@@ -84,7 +85,7 @@ public class HitObject {
      *
      * @param s The sound.
      */
-    public void setHitSound(final Sound s) {
+    public void setSampleSet(final Sound s) {
         this.hitSound = s.getId();
     }
 
@@ -93,7 +94,7 @@ public class HitObject {
      *
      * @param set The sample set to use.
      */
-    public void setHitSample(final SampleSet set) {
+    public void setSampleSet(final SampleSet set) {
         hitSample[0] = "" + set.getId();
     }
 
@@ -111,8 +112,8 @@ public class HitObject {
      *
      * @param sound The sound index.
      */
-    public void setIndex(final Sound sound) {
-        hitSample[2] = "" + sound.getId();
+    public void setIndex(final Sound... sound) {
+        hitSample[2] = "" + Stream.of(sound).mapToInt(Sound::getId).sum();
     }
 
     /**
@@ -131,6 +132,15 @@ public class HitObject {
      */
     public void setVolume(final Volume volume) {
         setVolume(volume.getLevel());
+    }
+
+    /**
+     * Use a custom Sample set.
+     *
+     * @param path The path to the custom sample set.
+     */
+    public void setHitSampleFile(final String path) {
+        this.hitSample[4] = path;
     }
 
     /**
@@ -183,10 +193,10 @@ public class HitObject {
     @Getter
     @RequiredArgsConstructor
     public enum Sound {
-        NORMAL(0),
-        WHISTLE(1),
-        FINISH(2),
-        CLAP(3);
+        HIT(0),
+        WHISTLE(2),
+        FINISH(4),
+        CLAP(8);
 
         /**
          * The numerical id of this type.
@@ -197,7 +207,7 @@ public class HitObject {
     @Getter
     @AllArgsConstructor
     public enum SampleSet {
-        NONE(0),
+        AUTO(0),
         NORMAL(1),
         SOFT(2),
         DRUM(3);
