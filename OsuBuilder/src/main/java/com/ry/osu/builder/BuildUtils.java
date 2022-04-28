@@ -126,8 +126,7 @@ public final class BuildUtils {
 
         // Clamp end time
         final HitObject.Type type;
-        BigDecimal end = note.getEndTime();
-        if (note.getEndNote() != null) {
+        if (note.getEndTime() != null) {
             ho.setEndTime(note.getEndTime()
                     .multiply(MILLIS_FACTOR, MathContext.DECIMAL64)
                     .toBigInteger()
@@ -141,7 +140,7 @@ public final class BuildUtils {
         // Set internals
         ho.setTime(start.toString());
         ho.setManiaColumn(note.getColumn(), numColumns);
-        ho.setY(end == null ? 0 : holdYPos);
+        ho.setY(type == HitObject.Type.HIT ? 0 : holdYPos);
         ho.setType(type);
 
         // Set base timing sounds
