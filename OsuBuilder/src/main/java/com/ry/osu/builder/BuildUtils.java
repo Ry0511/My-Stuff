@@ -1,7 +1,5 @@
 package com.ry.osu.builder;
 
-import com.ry.etterna.EtternaFile;
-import com.ry.etterna.msd.MSD;
 import com.ry.etterna.note.EtternaNoteInfo;
 import com.ry.etterna.note.Note;
 import com.ry.etterna.note.NoteMeasure;
@@ -12,8 +10,8 @@ import com.ry.vsrg.BPM;
 import lombok.NonNull;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.MathContext;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,26 +29,16 @@ public final class BuildUtils {
             = new BigDecimal("1000.0", MathContext.DECIMAL64);
 
     /**
-     * Cached etterna files will use the default etterna naming pack structure
-     * and MSD filters.
-     *
      * @param cache The cache file to create from.
      * @return Pre-built-Builder with the following data set: Hit Objects,
-     * Timing Points, Title, Tags, and Source.
+     * Timing Points.
      */
     public static BuildableOsuFile.BuildableOsuFileBuilder fromEtternaCache(
-            @NonNull final CachedNoteInfo cache,
-            @NonNull final MSD msd) {
+            @NonNull final CachedNoteInfo cache) {
         final TimingContainer container = getHitInfo(cache.getInfo());
-
-        final EtternaFile f = cache.getEtternaFile();
-
         return BuildableOsuFile.builder()
                 .setHitObjects(container.hitObjects())
-                .setTimingPoints(container.timingPoints())
-                .setTitle(f.getPackFolder().getName())
-                .setTags(msd.getMsdFilterTag("18", "38", "1"))
-                .setSource(msd.debugStr());
+                .setTimingPoints(container.timingPoints());
     }
 
     /**
@@ -120,9 +108,10 @@ public final class BuildUtils {
                                              final int numColumns) {
         final HitObject ho = new HitObject();
         final int holdYPos = 192;
-        final BigDecimal start = note.getStartTime()
+
+        final BigInteger start = note.getStartTime()
                 .multiply(MILLIS_FACTOR, MathContext.DECIMAL64)
-                .setScale(0, RoundingMode.UNNECESSARY);
+                .toBigInteger();
 
         // Clamp end time
         final HitObject.Type type;
