@@ -14,6 +14,7 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -45,11 +46,6 @@ public class EtternaIterator {
      */
     @Getter(AccessLevel.PRIVATE)
     private final Iterator<File> rootIterator;
-
-    /**
-     * The current file in the iterator.
-     */
-    private EtternaFile currentFile;
 
     /**
      * The current etterna file filter used to get next elements.
@@ -102,24 +98,36 @@ public class EtternaIterator {
 
             // Print error
         } catch (final IOException ex) {
-            System.err.println("[INFO] Skipping: " + next.getAbsolutePath());
             ex.printStackTrace();
+            System.err.println("[INFO] Skipping: " + next.getAbsolutePath());
         }
 
         return Optional.empty();
     }
 
     /**
-     * Parses all remaining files into Cached etterna files.
+     * For each remaining the pass the filter test, and are compilable to
+     * EtternaFile objects, map to the subject type and consume.
      *
-     * @param db The cache db to probe.
-     * @param handle The handler action.
+     * @param mapper The Mapping function.
+     * @param action The action to apply to all results.
+     * @param <V> The type of the mapped value.
+     */
+    public <V> void forEachMap(final Function<EtternaFile, V> mapper,
+                               final Consumer<V> action) {
+        while (hasNext()) {
+            next().map(mapper).ifPresent(action);
+        }
+    }
+
+    /**
+     * For each cached Note infos apply the given action.
+     *
+     * @param db The database to read cache from.
+     * @param action The action to apply to the Cached note infos.
      */
     public void forEachCached(final CacheDB db,
-                              final Consumer<CachedNoteInfo> handle) {
-        while (hasNext()) {
-            next().map(x -> CachedNoteInfo.from(x, db))
-                    .ifPresent(xs -> xs.forEach(handle));
-        }
+                              final Consumer<List<CachedNoteInfo>> action) {
+        forEachMap(x -> CachedNoteInfo.from(x, db), action);
     }
 }

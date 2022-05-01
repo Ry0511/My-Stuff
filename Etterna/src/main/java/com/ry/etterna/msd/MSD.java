@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
@@ -126,7 +127,7 @@ public class MSD {
     public String skillToString(final SkillSet skill) {
         final BigDecimal x = getSkill(skill);
         if (x == NAN) return "NaN";
-        return x.toString();
+        return x.toPlainString();
     }
 
     /**
@@ -180,7 +181,7 @@ public class MSD {
      */
     public String debugStr() {
         final StringJoiner sj = new StringJoiner(", ", "[", "]");
-        forEachSkill((s, v) -> sj.add(s.getAcronym() + ": " + v.toString()));
+        forEachSkill((s, v) -> sj.add(s.getAcronym() + ": " + skillToString(s)));
         return sj.toString();
     }
 
@@ -256,7 +257,8 @@ public class MSD {
         while (val.compareTo(max) <= 0) {
 
             // 2.12345 -> 2.12; 2.001 -> 2
-            final BigDecimal clamp = val.setScale(2, RoundingMode.HALF_UP)
+            final BigDecimal clamp = val
+                    .setScale(2, RoundingMode.HALF_UP)
                     .stripTrailingZeros();
 
             switch (overall.compareTo(val)) {
@@ -272,6 +274,19 @@ public class MSD {
         if (overall == NAN) sj.add("MSD==NaN");
         sj.add(getBestSkill().getAcronym() + "!");
         sj.add("MSD>?");
+        return sj.toString();
+    }
+
+    /**
+     * @return Skillset source string.
+     */
+    public String sourceStr() {
+        final StringJoiner sj = new StringJoiner(", ");
+        forEachSkill((s, v) -> sj.add(s.getAcronym()
+                + ": "
+                + skillToString(s))
+        );
+
         return sj.toString();
     }
 }
