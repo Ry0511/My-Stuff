@@ -5,23 +5,24 @@ import com.ry.etterna.msd.MSD;
 import com.ry.etterna.msd.SkillSet;
 import com.ry.etterna.reader.EtternaProperty;
 import com.ry.etterna.util.CachedNoteInfo;
-import com.ry.ffmpeg.FFMPEG;
 import com.ry.ffmpeg.FFMPEGUtils;
-import com.ry.ffmpeg.Task;
 import com.ry.osu.builder.BuildUtils;
 import com.ry.osu.builder.BuildableOsuFile;
 import com.ry.useful.StringUtils;
+import com.ry.vsrg.sequence.TimingSequence;
 import lombok.ToString;
 import lombok.Value;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.StringJoiner;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.function.Function;
 
 /**
@@ -45,12 +46,14 @@ public class ConvertableFile {
     File osuFile;
 
     /**
-     * The output audio file, nullable.
+     * The output audio file exists regardless of if the Input file has an audio
+     * file or not.
      */
     File audioFile;
 
     /**
-     * The output background file, nullable.
+     * The output background file exists regardless of if the input file has a
+     * background file or not.
      */
     File bgFile;
 
@@ -154,6 +157,13 @@ public class ConvertableFile {
         return append(songDir, "1.0x-Audio.mp3");
     }
 
+    /**
+     * @return {@code true} if the rate of this file is 1.0
+     */
+    public boolean isNormalRate() {
+        return getRate().equals("1.0");
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     // Creating output structure
     ///////////////////////////////////////////////////////////////////////////
@@ -168,63 +178,64 @@ public class ConvertableFile {
     }
 
     /**
-     * Creates a normal audio file blocking until it exists, or an error is
-     * thrown.
+     * Creates the appropriate FFMPEG CLI command to create the desired audio
+     * file in the subject output directory.
      *
-     * @param mpeg The ffmpeg instance to use to create the audio file.
-     * @return {@code true} if the Audio file exists.
+     * @return String array of CLI arguments.
      */
-    public boolean createNormalAudio(final FFMPEG mpeg) {
-
-        // Return immediately
+    public String[] getAudioConvertCommand() {
         if (getAudioFile().isFile()) {
-            return true;
+            throw new IllegalStateException(String.format(
+                    "Audio file '%s' already exists!",
+                    getAudioFile().getAbsolutePath()
+            ));
         }
 
-        // If both parameters are present
-        var delay = getEtternaFile().getOffset();
-        var audio = getEtternaFile().getAudioFile();
-        if (delay.isPresent() && audio.isPresent()) {
-            try {
+        final Optional<File> audio = getEtternaFile().getAudioFile();
+        if (audio.isPresent()) {
 
-                final Process p = mpeg.execAndWait(FFMPEGUtils.delayAudio(
-                        delay.get(),
+            // 1.0 Delayed audio
+            if (isNormalRate()) {
+                final var delay = getEtternaFile().getOffset()
+                        .orElse(BigDecimal.ZERO);
+
+                // The offsets are all offbeat by a single k/m this offset
+                // has to be applied to the audio file as doing time - offset
+                // will result in negative values.
+                final var timingData = getNotes().getInfo().getCurTimingInfo();
+                final var bpm = timingData.getBpms().get(0);
+                final var measure
+                        = getNotes().getInfo().getMeasures()[0].size();
+                final var timePerNote = TimingSequence.calcTimePerNote(
+                        measure,
+                        bpm.getValue().doubleValue()
+                ).divide(BigDecimal.valueOf(measure), MathContext.DECIMAL64);
+
+                final BigDecimal offset
+                        = delay.add(timePerNote, MathContext.DECIMAL64);
+
+                return FFMPEGUtils.delayAudio(
+                        offset,
                         audio.get().getAbsolutePath(),
                         getAudioFile().getAbsolutePath()
-                ));
-                return (p.exitValue() == 0) && getAudioFile().isFile();
+                );
 
-                // Use default exit check
-            } catch (final IOException | InterruptedException e) {
-                e.printStackTrace();
+                // Rated 1.0 audio
+            } else {
+                return FFMPEGUtils.rateAudio(
+                        getBaseRateAudio().getAbsolutePath(),
+                        getRate(),
+                        false,
+                        getAudioFile().getAbsolutePath()
+                );
             }
         }
-        return false;
-    }
 
-    public String[] asyncRatedAudio() {
-
-        if (getAudioFile().isFile()) {
-            return null;
-        }
-
-        final File normal = getBaseRateAudio();
-        if (normal.isFile()) {
-            return FFMPEGUtils.rateAudio(
-                    normal.getAbsolutePath(),
-                    getRate(),
-                    false,
-                    getAudioFile().getAbsolutePath()
-            );
-
-        } else {
-            System.err.println(
-                    "Normal audio file doesn't exist: "
-                            + normal.getAbsolutePath()
-            );
-        }
-
-        return null;
+        // Default exit is error
+        throw new IllegalStateException(
+                "Audio file doesn't exist for chart: "
+                        + getEtternaFile().getSmFile().getAbsolutePath()
+        );
     }
 
     /**
@@ -252,7 +263,7 @@ public class ConvertableFile {
                                 bgFile.getAbsolutePath(),
                                 fn.apply(getBgFile().getAbsolutePath())
                         ).get();
-                    } catch (InterruptedException | ExecutionException e) {
+                    } catch (final Exception e) {
                         e.printStackTrace();
                         return null;
                     }
@@ -268,16 +279,38 @@ public class ConvertableFile {
      * @return Builder which can be written to.
      */
     public BuildableOsuFile.BuildableOsuFileBuilder asOsuBuilder() {
-        final var v = BuildUtils.fromEtternaCache(getNotes(), getMsd());
+        final var v = BuildUtils.fromEtternaCache(getNotes());
 
         v.setBackgroundFile(getBgFile().getName());
         v.setAudioFile(getAudioFile().getName());
         v.setTitle(getEtternaFile().getPackFolder().getName());
-        v.setCreator("The guy in your basement :)");
+        v.setCreator("Overcomplicated Conversion Tool");
+        v.setSource(getMsd().sourceStr());
+
+        // Filter search tags
+        final StringJoiner tags = new StringJoiner(",");
+        tags.add(getMsd().getMsdFilterTag("18", "35", "1"));
+        tags.add(isNormalRate() ? "rate:no" : "rate:yes");
+        getEtternaFile().getOffset().ifPresent(x -> {
+            if (x.compareTo(BigDecimal.ZERO) > 0) {
+                tags.add("delay:positive");
+            } else {
+                tags.add("delay:negative");
+            }
+        });
+
+        // JS:25 TECH:23 etc
+        getMsd().forEachSkill((skill, val) -> {
+            tags.add(skill.getAcronym()
+                    + ":"
+                    + val.setScale(0, RoundingMode.FLOOR).toPlainString()
+            );
+        });
+        v.setTags(tags.toString());
 
         // If the title is missing use the filename
         final String title;
-        var element = getEtternaFile().getProperty(EtternaProperty.TITLE);
+        final var element = getEtternaFile().getProperty(EtternaProperty.TITLE);
         if (element.isEmpty()) {
             title = StringUtils.getFileName(
                     getEtternaFile().getSmFile().getName()
@@ -286,11 +319,13 @@ public class ConvertableFile {
             title = element.getProcessed();
         }
 
+        // Version
         v.setVersion(String.format(
-                "[%s-%sx] - %s",
+                "%s - [%s] %s (%sx)",
+                getUnicodeID(),
                 getMsd().getSkill(SkillSet.OVERALL).toPlainString(),
-                getRate(),
-                title
+                title,
+                getRate()
         ));
 
         return v;
