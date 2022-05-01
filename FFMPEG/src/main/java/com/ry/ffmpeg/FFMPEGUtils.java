@@ -4,6 +4,8 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +14,10 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 
 /**
  * Java class created on 23/04/2022 for usage in project FunctionalUtils.
@@ -83,10 +88,10 @@ public final class FFMPEGUtils {
      * underlying data.
      *
      * @param input The input file to compress.
-     * @return Future of this tasks state.
+     * @return The executed process in its final state.
      */
-    public static Future<Process> compressAudio(
-            @NonNull final File input) throws IOException {
+    public static Process compressAudio(@NonNull final File input)
+            throws IOException, InterruptedException {
         final String name = input.getName();
         final String ext = name.substring(name.lastIndexOf("."));
 
@@ -96,7 +101,7 @@ public final class FFMPEGUtils {
         );
         FileUtils.copyFile(input, tmp.toFile());
 
-        return FFMPEG.INSTANCE.exec(CommandBuilder.builder().add(
+        return FFMPEG.INSTANCE.execAndWait(CommandBuilder.builder().add(
                         "-y", "-i", quote(tmp.toFile().getAbsolutePath()),
                         "-preset", "veryslow", quote(input.getAbsolutePath())
                 ).build()
@@ -162,5 +167,40 @@ public final class FFMPEGUtils {
      */
     public static String quote(@NonNull final String a) {
         return "\"" + a + "\"";
+    }
+
+    /**
+     * Iterates through the provided directory and all its subdirectories and
+     * for all files which are audio files (.ogg, .mp3, .wav) apply {@link
+     * #compressAudio(File)} using the provided service.
+     *
+     * @param dir The directory to search through.
+     * @param finishedHandle Called everytime a task has finished, first
+     * parameter is guaranteed to be the subject file the second parameter can
+     * be Either null indicating an Exception occurred, or a Process which is
+     * potentially complete.
+     * @param service The service to submit tasks to.
+     */
+    public static void compressAllAudio(final File dir,
+                                        final ExecutorService service,
+                                        final BiConsumer<File, Process> finishedHandle) {
+        final String[] files = {".ogg", ".mp3", ".wav"};
+        final Iterator<File> iter = FileUtils.iterateFiles(
+                dir,
+                new SuffixFileFilter(files),
+                TrueFileFilter.TRUE
+        );
+
+        while (iter.hasNext()) {
+            final File f = iter.next();
+            iter.remove();
+            service.submit(() -> {
+                try {
+                    finishedHandle.accept(f, compressAudio(f));
+                } catch (final IOException | InterruptedException e) {
+                    finishedHandle.accept(f, null);
+                }
+            });
+        }
     }
 }

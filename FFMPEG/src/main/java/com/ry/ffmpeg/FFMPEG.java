@@ -1,8 +1,6 @@
 package com.ry.ffmpeg;
 
-import lombok.AccessLevel;
 import lombok.Data;
-import lombok.Getter;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -23,7 +21,7 @@ public final class FFMPEG {
      * unbounded level of parallelism.
      */
     public static final FFMPEG INSTANCE
-            = new FFMPEG(Executors.newWorkStealingPool());
+            = new FFMPEG(Executors.newWorkStealingPool(4));
 
     /**
      * The ffmpeg command executor.
