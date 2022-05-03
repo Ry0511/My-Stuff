@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
@@ -50,11 +49,9 @@ public class MSD {
     public static final int BASE_SCALE = 2;
 
     /**
-     * When scaling MSD Values, truncate, though half even is probably a better
-     * choice however this really doesn't matter since almost no MSD values have
-     * a scale exceeding 2 with a radix that actually makes a difference.
+     * Scale MSD Values for FPU error correction.
      */
-    public static final RoundingMode MODE = RoundingMode.DOWN;
+    public static final RoundingMode MODE = RoundingMode.HALF_UP;
 
     /**
      * Array of MSD Skillset values.
@@ -102,6 +99,30 @@ public class MSD {
         final BigDecimal[] skills = new BigDecimal[SkillSet.NUM_SKILLSETS];
         for (int i = 0; i < skills.length; ++i) {
             skills[i] = parseValue(skillSets[i]);
+        }
+        return new MSD(skills);
+    }
+
+    /**
+     * Loads an MSD instance from the raw MSD floating point values.
+     *
+     * @param msd The MSD Float array.
+     * @return New MSD instance, which has the values of the MSD array using the
+     * default FPU Error correction.
+     */
+    public static MSD initFromFloats(final float[] msd) {
+        if (msd.length != SkillSet.NUM_SKILLSETS) {
+            throw new RuntimeException(String.format(
+                    "MSD Load Fail expected '%s' but got '%s'%n",
+                    SkillSet.NUM_SKILLSETS,
+                    msd.length
+            ));
+        }
+
+        final BigDecimal[] skills = new BigDecimal[SkillSet.NUM_SKILLSETS];
+        for (int i = 0; i < skills.length; ++i) {
+            skills[i] = BigDecimal.valueOf(msd[i])
+                    .setScale(BASE_SCALE, MODE);
         }
         return new MSD(skills);
     }
