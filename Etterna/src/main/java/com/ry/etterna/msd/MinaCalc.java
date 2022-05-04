@@ -1,10 +1,17 @@
 package com.ry.etterna.msd;
 
+import com.ry.etterna.EtternaFile;
 import com.ry.etterna.note.EtternaNoteInfo;
+import com.ry.vsrg.sequence.TimingSequence;
+import lombok.Value;
 
+import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.StringJoiner;
 
 /**
  * Java class created on 03/05/2022 for usage in project FunctionalUtils.
@@ -38,7 +45,7 @@ public final class MinaCalc {
      * @param times The start time of each note, that is, zip xs zs := [(x,z)]
      * @return MSD Value for the above mapped notes.
      */
-    private static native float[] getDefaultMSDFor(int[] notes, float[] times);
+    public static native float[] getDefaultMSDFor(int[] notes, float[] times);
 
     /**
      * @param notes All notes to calc.
@@ -47,10 +54,10 @@ public final class MinaCalc {
      * @param rate The rate of the chart/notes default is 1.F.
      * @return MSD Value for the above mapped notes.
      */
-    private static native float[] getMSDForRateAndGoal(int[] notes,
-                                                       float[] times,
-                                                       float scoreGoal,
-                                                       float rate);
+    public static native float[] getMSDForRateAndGoal(int[] notes,
+                                                      float[] times,
+                                                      float scoreGoal,
+                                                      float rate);
 
     /**
      * @param notes All notes to calc.
@@ -58,58 +65,78 @@ public final class MinaCalc {
      * @param fill The list to populate with MSD info.
      * @return That same list.
      */
-    private static native List<float[]> getMSDForAllRates(int[] notes,
-                                                          float[] times,
-                                                          List<float[]> fill);
+    public static native List<float[]> getMSDForAllRates(int[] notes,
+                                                         float[] times,
+                                                         List<float[]> fill);
 
     /**
-     * Causes the immediate disposal of the CalcHandle.
+     * Causes the immediate disposal of the current CalcHandle.
      */
     public static native void dispose();
-
-    /**
-     * Checks to see if the dependencies for the MinaCalc have been natively
-     * loaded correctly and are currently usable.
-     *
-     * @return If the handle can be used.
-     */
-    public static native boolean isNativelyLoaded();
 
     ///////////////////////////////////////////////////////////////////////////
     // Class used as a bridge to the primitives that MinaCalc requires.
     ///////////////////////////////////////////////////////////////////////////
 
-    private static final class RawNotes {
-        private final int[] notes;
-        private final float[] times;
+    @Value
+    private static class RawNotes {
+        int[] notes;
+        float[] times;
 
         RawNotes(final EtternaNoteInfo info) {
-            final int size = info.getNumRows();
-            this.notes = new int[size];
-            this.times = new float[size];
-            // Not safe but ehh
-            int[] c = {0};
+
+            List<Integer> notes = new ArrayList<>();
+            List<Float> times = new ArrayList<>();
+
+            // Not fast but ehh
+            final TimingSequence seq = new TimingSequence();
             info.forEachNote((m, r) -> {
-                this.notes[c[0]] = r.getNoteMapping();
-                this.times[c[0]] = r.getStartTime().floatValue();
-                c[0] = c[0]++;
+                int n = r.getNoteMapping();
+
+                if (n != 0) {
+                    notes.add(n);
+                    times.add(seq.getCurTimeScaled().floatValue());
+                }
+
+                seq.advanceByNote(m.size(), r.getBpm().getValue());
             });
+
+            this.notes = new int[notes.size()];
+            this.times = new float[notes.size()];
+            for (int i = 0; i < notes.size(); i++) {
+                this.notes[i] = notes.get(i);
+                this.times[i] = times.get(i) ;
+            }
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
+        // todo Find out why the std::clamp function is throwing assertion
+        //  errors; it seems to only happen in the CJOHAnchor pmod.
+        //  removing the base cap with a hardcoded value fixes the issue.
+        EtternaFile file = new EtternaFile(new File("C:\\Games\\Etterna\\Songs2\\Nuclear Blast JS Awesome Bomb Filez 5\\FUTURE DOMINATORS (IcyWorld)\\05 FUTURE DOMINATORS.sm"));
 
-        int[] notes = {1, 1, 1, 1};
-        float[] times = {0.F, 0.333F, 0.666F, 0.999F};
+        file.getNoteInfo().stream().findFirst().ifPresent(x -> {
+            x.timeNotesWith(file.getTimingInfo());
 
-        List<float[]> allRates = getMSDForAllRates(
-                notes,
-                times,
-                new ArrayList<>()
-        );
+            RawNotes n = new RawNotes(x);
 
-        allRates.forEach(x -> {
-            System.out.println(Arrays.toString(x));
+            float[] msd = getMSDForRateAndGoal(
+                    n.getNotes(),
+                    n.getTimes(),
+                    0.93F,
+                    1.F
+            );
+
+
+            StringJoiner sj = new StringJoiner(", ");
+            for (float v : msd) {
+                BigDecimal vv = BigDecimal.valueOf(v);
+                sj.add(vv.setScale(2, RoundingMode.CEILING)
+                        .toPlainString()
+                );
+            }
+            System.out.println(sj);
         });
     }
 }

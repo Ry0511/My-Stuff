@@ -114,7 +114,11 @@ public class NoteRow extends Row<Note> implements Iterable<Note> {
         final StringBuilder sb = new StringBuilder();
         final char note = 'x';
         final char empty = '-';
-        forEach(x -> sb.append(x.getStartNote().isTap() ? note : empty));
+
+        forEach(x -> sb.append(
+                (x.getStartNote().isTap() || x.getStartNote().isHoldHead())
+                ? note
+                : empty));
         return NOTE_MAPPING.get(sb.toString());
     }
 }
