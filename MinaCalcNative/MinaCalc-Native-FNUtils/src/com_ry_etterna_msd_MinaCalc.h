@@ -39,14 +39,6 @@ JNIEXPORT jobject JNICALL Java_com_ry_etterna_msd_MinaCalc_getMSDForAllRates
 JNIEXPORT void JNICALL Java_com_ry_etterna_msd_MinaCalc_dispose
   (JNIEnv *, jclass);
 
-/*
- * Class:     com_ry_etterna_msd_MinaCalc
- * Method:    isNativelyLoaded
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_com_ry_etterna_msd_MinaCalc_isNativelyLoaded
-  (JNIEnv *, jclass);
-
 #ifdef __cplusplus
 }
 

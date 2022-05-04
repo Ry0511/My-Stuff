@@ -1,0 +1,3 @@
+G:/Dev/Projects/IntelliJ/FunctionalUtils/MinaCalcNative/MinaCalc-Native-FNUtils/cmake-build-debug/CMakeFiles/MinaCalc_Native_FNUtils.dir
+G:/Dev/Projects/IntelliJ/FunctionalUtils/MinaCalcNative/MinaCalc-Native-FNUtils/cmake-build-debug/CMakeFiles/edit_cache.dir
+G:/Dev/Projects/IntelliJ/FunctionalUtils/MinaCalcNative/MinaCalc-Native-FNUtils/cmake-build-debug/CMakeFiles/rebuild_cache.dir
