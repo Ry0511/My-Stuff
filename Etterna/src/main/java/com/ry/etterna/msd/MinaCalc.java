@@ -7,11 +7,8 @@ import lombok.Value;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringJoiner;
 
 /**
  * Java class created on 03/05/2022 for usage in project FunctionalUtils.
@@ -19,6 +16,9 @@ import java.util.StringJoiner;
  * @author -Ry
  */
 public final class MinaCalc {
+
+    // Todo I have not tested this and don't know if it can handle a wide range
+    //  of files.
 
     // Loads the MinaDll file.
     static {
@@ -78,6 +78,8 @@ public final class MinaCalc {
     // Class used as a bridge to the primitives that MinaCalc requires.
     ///////////////////////////////////////////////////////////////////////////
 
+    // Todo this can be optimised.
+
     @Value
     private static class RawNotes {
         int[] notes;
@@ -121,22 +123,14 @@ public final class MinaCalc {
 
             RawNotes n = new RawNotes(x);
 
-            float[] msd = getMSDForRateAndGoal(
+            MSD msd = MSD.initFromFloats(getMSDForRateAndGoal(
                     n.getNotes(),
                     n.getTimes(),
                     0.93F,
                     1.F
-            );
+            ));
 
-
-            StringJoiner sj = new StringJoiner(", ");
-            for (float v : msd) {
-                BigDecimal vv = BigDecimal.valueOf(v);
-                sj.add(vv.setScale(2, RoundingMode.CEILING)
-                        .toPlainString()
-                );
-            }
-            System.out.println(sj);
+            System.out.println(msd.toString());
         });
     }
 }

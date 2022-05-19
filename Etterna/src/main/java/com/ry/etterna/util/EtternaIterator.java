@@ -1,25 +1,20 @@
 package com.ry.etterna.util;
 
 import com.ry.etterna.EtternaFile;
-import com.ry.etterna.db.CacheDB;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * Java class created on 22/04/2022 for usage in project FunctionalUtils.
@@ -45,7 +40,7 @@ public class EtternaIterator {
      * Iterator of which iterates the Root directory for potential .SM files.
      */
     @Getter(AccessLevel.PRIVATE)
-    private final Iterator<File> rootIterator;
+    private final Stream<Path> rootStream;
 
     /**
      * The current etterna file filter used to get next elements.
@@ -56,78 +51,47 @@ public class EtternaIterator {
     /**
      * @param root Root directory containing potentially Zero Stepmania files.
      */
-    public EtternaIterator(final File root) {
+    public EtternaIterator(final File root) throws IOException {
         this.root = root;
-        this.rootIterator = FileUtils.iterateFiles(
-                root,
-                SM_FILTER,
-                TrueFileFilter.TRUE
-        );
+        this.rootStream = Files.walk(root.toPath());
     }
 
     /**
-     * @return {@code true} if this Iterator has another file to test.
-     */
-    public boolean hasNext() {
-        return rootIterator.hasNext();
-    }
-
-    /**
-     * Optionally returns the next element in the iteration, that is, if the
-     * next element exists and is Mappable then an element is returned, else if
-     * the next element is not Mappable then Empty is returned.
+     * Maps the elements of the root stream to Etterna Files using the input
+     * filter.
      *
-     * @return Empty or if Mappable the next element.
-     * @throws NoSuchElementException If this iterator does not have a 'next'.
+     * @return Stream of all acceptable etterna files.
      */
-    public Optional<EtternaFile> next() throws NoSuchElementException {
-        final File next = rootIterator.next();
+    public Stream<EtternaFile> getEtternaStream() {
+        return this.getRootStream()
+                .map(Path::toFile)
+                .filter(File::isFile)
+                .filter(x -> x.getName().endsWith(".sm"))
+                .map(this::mapFile)
+                .filter(Optional::isPresent)
+                .map(Optional::get);
+    }
 
-        // Only files which are compatible + non Exception
+    /**
+     * Maps the input file using the provided filter to an EtternaFile object.
+     *
+     * @param file The file to map.
+     * @return Optionally mapped file if the input file can be mapped and is
+     * acceptable to the input filter.
+     */
+    public Optional<EtternaFile> mapFile(final File file) {
         try {
-            final EtternaFile file = new EtternaFile(next);
-            if (getFilter() == null || getFilter().test(file)) {
-                return Optional.of(file);
-
-                // Inform of skipped file
+            final EtternaFile f = new EtternaFile(file);
+            if (getFilter().test(f)) {
+                return Optional.of(f);
             } else {
-                System.out.println(
-                        "[INFO] Skipping: " + next.getAbsolutePath()
-                );
+                return Optional.empty();
             }
-
-            // Print error
-        } catch (final IOException ex) {
-            ex.printStackTrace();
-            System.err.println("[INFO] Skipping: " + next.getAbsolutePath());
+        } catch (final IOException e) {
+            System.err.printf(
+                    "[IO-ERROR] '%s' failed...%n", file.getAbsolutePath()
+            );
+            return Optional.empty();
         }
-
-        return Optional.empty();
-    }
-
-    /**
-     * For each remaining the pass the filter test, and are compilable to
-     * EtternaFile objects, map to the subject type and consume.
-     *
-     * @param mapper The Mapping function.
-     * @param action The action to apply to all results.
-     * @param <V> The type of the mapped value.
-     */
-    public <V> void forEachMap(final Function<EtternaFile, V> mapper,
-                               final Consumer<V> action) {
-        while (hasNext()) {
-            next().map(mapper).ifPresent(action);
-        }
-    }
-
-    /**
-     * For each cached Note infos apply the given action.
-     *
-     * @param db The database to read cache from.
-     * @param action The action to apply to the Cached note infos.
-     */
-    public void forEachCached(final CacheDB db,
-                              final Consumer<List<CachedNoteInfo>> action) {
-        forEachMap(x -> CachedNoteInfo.from(x, db), action);
     }
 }
