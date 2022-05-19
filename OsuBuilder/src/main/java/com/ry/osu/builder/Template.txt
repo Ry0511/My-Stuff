@@ -1,7 +1,10 @@
+///////////////////////////////////////////////////////////////////////////////
 //
 // AUTO GENERATED FILE FROM -RY'S ETTERNA -> OSU! PROGRAM
 //
-
+// Version: 1.1    File Prefix: -1815    Set Prefix: -5181
+//
+///////////////////////////////////////////////////////////////////////////////
 osu file format v11
 
 [General]
@@ -31,6 +34,8 @@ Creator:___CREATOR
 Version:___VERSION
 Source:___SOURCE
 Tags:___TAGS
+BeatmapID:-1815___BEATMAP_ID
+BeatmapSetID:-5181___BEATMAP_SET_ID
 
 [Difficulty]
 HPDrainRate: 8

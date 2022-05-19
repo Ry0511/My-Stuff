@@ -62,7 +62,9 @@ public final class Template {
         TAGS,
         BG_FILE,
         TIMING_POINTS,
-        HIT_OBJECTS;
+        HIT_OBJECTS,
+        BEATMAP_SET_ID,
+        BEATMAP_ID;
 
         private static final String[] REPLACE_TARGET = {
                 "___AUDIO-FILE-NAME",
