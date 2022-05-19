@@ -1,0 +1,2 @@
+#pragma code_page(65001)
+2 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "G:/Dev/Projects/IntelliJ/FunctionalUtils/MinaCalcNative/MinaCalc-Native-FNUtils/cmake-build-debug/CMakeFiles/MinaCalc_Native_FNUtils.dir/embed.manifest"

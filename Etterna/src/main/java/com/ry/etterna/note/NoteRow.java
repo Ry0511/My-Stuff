@@ -5,7 +5,10 @@ import lombok.NonNull;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Java class created on 08/04/2022 for usage in project FunctionalUtils.
@@ -13,6 +16,24 @@ import java.util.Iterator;
  * @author -Ry
  */
 public class NoteRow extends Row<Note> implements Iterable<Note> {
+
+    /**
+     * Look up table of String note mappings to the unsigned note value.
+     */
+    public static final Map<String, Integer> NOTE_MAPPING = new HashMap<>();
+
+    // Probably could've used a more sophisticated method lol
+    static {
+        final List<String> keys = List.of(
+                "----", "x---", "-x--", "xx--", "--x-", "x-x-", "-xx-",
+                "xxx-", "---x", "x--x", "-x-x", "xx-x", "--xx", "x-xx",
+                "-xxx", "xxxx"
+        );
+
+        for (int i = 0; i < keys.size(); ++i) {
+            NOTE_MAPPING.put(keys.get(i), i);
+        }
+    }
 
     /**
      * Takes a RAW String of an Etterna note row and processes into a Note Row
@@ -84,5 +105,20 @@ public class NoteRow extends Row<Note> implements Iterable<Note> {
      */
     public BigDecimal getStartTime() {
         return getNotes()[0].getStartTime();
+    }
+
+    /**
+     * @return The note mapping value for this row of notes.
+     */
+    public int getNoteMapping() {
+        final StringBuilder sb = new StringBuilder();
+        final char note = 'x';
+        final char empty = '-';
+
+        forEach(x -> sb.append(
+                (x.getStartNote().isTap() || x.getStartNote().isHoldHead())
+                ? note
+                : empty));
+        return NOTE_MAPPING.get(sb.toString());
     }
 }

@@ -53,4 +53,11 @@ public class Row<T extends Timed> {
     public Stream<T> stream() {
         return Stream.of(getNotes());
     }
+
+    /**
+     * @return The number of notes in this row.
+     */
+    public int size() {
+        return notes.length;
+    }
 }

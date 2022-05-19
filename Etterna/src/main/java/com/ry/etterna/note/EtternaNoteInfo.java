@@ -91,6 +91,12 @@ public class EtternaNoteInfo {
     private final boolean isDanceSingle;
 
     /**
+     * The difficulty number of this chart.
+     */
+    @Setter
+    private int difficultyIndex;
+
+    /**
      * Loads the Note Info from the RAW string.
      *
      * @param info The string to load from.
@@ -354,5 +360,20 @@ public class EtternaNoteInfo {
             @NonNull final CacheDB db) throws SQLException {
         final String key = isDanceSingle ? getChartKey4K() : getChartKey();
         return db.getStepCacheFor(key);
+    }
+
+    /**
+     * Lazily counts the number of Rows in this chart.
+     *
+     * @return The number of Rows in this chart.
+     */
+    public int getNumRows() {
+        int count = 0;
+
+        for (final var v : getMeasures()) {
+            count += v.size();
+        }
+
+        return count;
     }
 }

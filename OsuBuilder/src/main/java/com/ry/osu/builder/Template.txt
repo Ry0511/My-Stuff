@@ -1,0 +1,63 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// AUTO GENERATED FILE FROM -RY'S ETTERNA -> OSU! PROGRAM
+//
+// Version: 1.1    File Prefix: -1815    Set Prefix: -5181
+//
+///////////////////////////////////////////////////////////////////////////////
+osu file format v11
+
+[General]
+AudioFilename:___AUDIO-FILE-NAME
+AudioLeadIn: 1500
+PreviewTime: 0
+Countdown: 0
+SampleSet: None
+StackLeniency: 0.7
+SpecialStyle: 0
+WidescreenStoryboard: 0
+Mode: 3
+LetterboxInBreaks: 0
+
+[Editor]
+DistanceSnapping: 0.9
+BeatDivisor: 4
+GridSize: 16
+CurrentTime: 0
+
+[Metadata]
+Title:___TITLE
+TitleUnicode:___TITLE
+Artist:___ARTIST
+ArtistUnicode:___ARTIST
+Creator:___CREATOR
+Version:___VERSION
+Source:___SOURCE
+Tags:___TAGS
+BeatmapID:-1815___BEATMAP_ID
+BeatmapSetID:-5181___BEATMAP_SET_ID
+
+[Difficulty]
+HPDrainRate: 8
+CircleSize: 4
+OverallDifficulty: 8
+ApproachRate: 9
+SliderMultiplier: 1.4
+SliderTickRate: 1
+
+[Events]
+// Background and Video events
+0,0,"___BACKGROUND-FILE",0,0
+// Storyboard Layer 0 (Background)
+// Storyboard Layer 1 (Fail)
+// Storyboard Layer 2 (Pass)
+// Storyboard Layer 3 (Foreground)
+// Storyboard Sound Samples
+// Background Colour Transformations
+3,100,163,162,255
+
+[TimingPoints]
+___TIMING-POINTS
+
+[HitObjects]
+___HIT-OBJECTS

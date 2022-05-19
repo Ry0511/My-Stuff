@@ -161,9 +161,11 @@ public class TimingSequence {
      */
     public BigDecimal getCurTimeScaledMS() {
         // Get, scale, clamp
-        return getCurTimeScaled()
+        return new BigDecimal(getCurTimeScaled()
                 .multiply(BigDecimal.valueOf(MS_TIME_SCALE))
-                .setScale(0, RoundingMode.UNNECESSARY);
+                .toBigInteger()
+                .toString()
+        );
     }
 
     /**

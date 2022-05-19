@@ -12,6 +12,8 @@
         <module>Etterna</module>
         <module>VSRG</module>
         <module>EtternaToOsu</module>
+        <module>FFMPEG</module>
+        <module>OsuBuilder</module>
     </modules>
 
     <properties>
@@ -24,7 +26,7 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.22</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
         <dependency>

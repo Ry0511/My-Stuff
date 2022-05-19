@@ -12,6 +12,7 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,12 +31,12 @@ import java.util.stream.Stream;
  * @author -Ry
  */
 @Data
+@Setter(AccessLevel.PRIVATE)
 public class EtternaFile {
 
     /**
      * Regex to match a bunch of different media types.
      */
-    // Regex isn't needed for this and is probably slower, maybe not.
     private static final Pattern ANY_AUDIO_REGEX = Pattern.compile(
             "(?i).*\\.(mp3|ogg|flv|wav)"
     );
@@ -90,6 +91,12 @@ public class EtternaFile {
         this.smFile = file;
         this.timingInfo = reader.getTimingInfo();
         this.noteInfo = reader.getNoteInfo();
+
+        for (int i = 0; i < noteInfo.size(); ++i) {
+            final var v = noteInfo.get(i);
+            v.setParent(this);
+            v.setDifficultyIndex(i);
+        }
 
         // Load the basic string properties
         properties = new HashMap<>();
@@ -232,11 +239,25 @@ public class EtternaFile {
         }
     }
 
+    /**
+     * @return The Pack folder.
+     * @throws RuntimeException Iff {@link #hasPackStructure()} is false.
+     */
     public File getPackFolder() {
         if (hasPackStructure()) {
             return smFile.getParentFile().getParentFile();
         } else {
             throw new RuntimeException("No Pack Structure...");
         }
+    }
+
+    /**
+     * @return {@code true} if this File has the pack structure, has an audio
+     * file, and has a parseable offset.
+     */
+    public boolean isStandard() {
+        return hasPackStructure()
+                && getAudioFile().isPresent()
+                && getOffset().isPresent();
     }
 }

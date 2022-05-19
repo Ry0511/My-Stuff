@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.lang.reflect.MalformedParametersException;
@@ -15,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -248,13 +246,13 @@ public final class StringUtils {
     }
 
     /**
-     * Takes the input arguments as build parameters to a Path, that is, iff
-     * an object has the File declared type then the absolute path is
-     * appended followed by "/" and any other arguments.
+     * Takes the input arguments as build parameters to a Path, that is, iff an
+     * object has the File declared type then the absolute path is appended
+     * followed by "/" and any other arguments.
      *
      * @param elems The arguments to build with.
-     * @return A path from all the provided elements, note that this does
-     * not validate if said path is valid or functional.
+     * @return A path from all the provided elements, note that this does not
+     * validate if said path is valid or functional.
      */
     public static String buildPath(final Object... elems) {
         final StringJoiner sj = new StringJoiner("/");
@@ -277,6 +275,12 @@ public final class StringUtils {
         );
     }
 
+    /**
+     * Gets a safe filename from the provided string.
+     *
+     * @param s The filename (extension included) to test.
+     * @return MD5Hex if the filename is improper, else 's'.
+     */
     public static String toFileName(final String s) {
         if (contains(s, Constants.ILLEGAL_FILE_CHARS.pattern())) {
             final String ext = getFileExtension(s, true);

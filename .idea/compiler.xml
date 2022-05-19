@@ -8,8 +8,10 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="VSRG" />
+        <module name="FFMPEG" />
         <module name="Etterna" />
         <module name="EtternaToOsu" />
+        <module name="OsuBuilder" />
       </profile>
     </annotationProcessing>
   </component>

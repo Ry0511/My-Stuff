@@ -118,6 +118,9 @@ public class Commands {
     @SuperBuilder(setterPrefix = "set")
     public static class PositiveAudioOffset extends IO {
 
+        // Alternative: (5 seconds of delay)
+        // ffmpeg -i input.mp4 -itsoffset 5 -i input.mp4 -map 0:v -map 1:a -vcodec copy -acodec copy delayed.mp4
+
         // ffmpeg -i "X" -af "adelay=DELAY" "O"
         private static final String[] ARGS = {
                 "FFMPEG", "-y", "-i", "INPUT",
