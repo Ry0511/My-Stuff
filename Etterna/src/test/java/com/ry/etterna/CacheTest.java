@@ -6,6 +6,7 @@ import com.ry.etterna.util.CachedNoteInfo;
 import com.ry.etterna.util.EtternaIterator;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 
 /**
@@ -21,13 +22,13 @@ public class CacheTest {
     public static final File SONGS_DIR
             = new File("C:\\Games\\Etterna\\Songs");
 
-    public static void main(String[] args) throws SQLException {
+    public static void main(String[] args) throws SQLException, IOException {
         final CacheDB db = new CacheDB(CACHE);
         final EtternaIterator iter = new EtternaIterator(SONGS_DIR);
         iter.setFilter(EtternaFile::isStandard);
 
-        iter.forEachCached(db, cached -> {
-            
-        });
+        iter.getEtternaStream()
+                .map(x -> CachedNoteInfo.from(x, db))
+                .forEach(xs -> xs.forEach(System.out::println));
     }
 }
