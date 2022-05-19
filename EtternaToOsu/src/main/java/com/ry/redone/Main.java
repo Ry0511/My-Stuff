@@ -67,7 +67,7 @@ public class Main {
     public static final File OUTPUT_DIR = new File("G:\\Games\\- - - Converts (29-04-2022)");
 
 
-    public static void main(final String[] args) throws SQLException {
+    public static void main(final String[] args) throws SQLException, IOException {
         final Instant start = Instant.now();
         final CacheDB db = new CacheDB(CACHE_FILE);
 
@@ -78,10 +78,9 @@ public class Main {
                 final EtternaIterator iter = new EtternaIterator(packs[i]);
                 iter.setFilter(EtternaFile::isStandard);
 
-                iter.forEachCached(
-                        db,
-                        xs -> service.submit(() -> Main.handleNotes(xs))
-                );
+                //
+                // For each file pass to handleNotes(FILE)
+                //
 
                 try {
                     service.shutdown();
