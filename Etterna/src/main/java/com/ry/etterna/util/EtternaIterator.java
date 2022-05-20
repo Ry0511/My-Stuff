@@ -79,7 +79,7 @@ public class EtternaIterator {
      * @return Optionally mapped file if the input file can be mapped and is
      * acceptable to the input filter.
      */
-    public Optional<EtternaFile> mapFile(final File file) {
+    private Optional<EtternaFile> mapFile(final File file) {
         try {
             final EtternaFile f = new EtternaFile(file);
             if (getFilter().test(f)) {
