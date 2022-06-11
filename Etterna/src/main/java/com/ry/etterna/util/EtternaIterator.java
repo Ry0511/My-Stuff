@@ -87,10 +87,11 @@ public class EtternaIterator {
             } else {
                 return Optional.empty();
             }
-        } catch (final IOException e) {
+        } catch (final Exception e) {
             System.err.printf(
                     "[IO-ERROR] '%s' failed...%n", file.getAbsolutePath()
             );
+            e.printStackTrace();
             return Optional.empty();
         }
     }

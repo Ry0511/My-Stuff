@@ -160,7 +160,7 @@ public class ConvertableFile {
      * @return The 1.0 Audio file destination.
      */
     public File getBaseRateAudio() {
-        return append(songDir, "1.0x-Audio.mp3");
+        return append(songDir, "1.00x-Audio.mp3");
     }
 
     /**

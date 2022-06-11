@@ -26,8 +26,18 @@ import java.util.concurrent.TimeUnit;
  */
 public class Main {
 
+    // todo Beatmap set & Beatmap id are not set producing broken files, and
+    //  the 1.0x audio file is broken since its looking for 1.00x just a name
+    //  issue.
+
     // todo this is a little bit faster however still takes 24s to convert 35
-    //  audio files.
+    //  audio files. The fastest approach I can think of would be to also
+    //  asynchronously create the 1.0x files as well, however this has two
+    //  main issues firstly this would increase the memory overhead (Should
+    //  be fine since it takes a long time for me to get OFM errors),
+    //  secondly we cant start the rated audio file conversions until the 1
+    //  .0x audio file is created thus we need to block the submission of the
+    //  audio tasks and have them wait of the 1.0x audio somehow.
 
     public static final MathContext C = MathContext.DECIMAL64;
     public static final BigDecimal DEVIATION_LIMIT = new BigDecimal("8");
@@ -37,11 +47,12 @@ public class Main {
 
     public static final File CACHE_FILE = new File("C:\\Games\\Etterna\\Cache\\cache.db");
     public static final File SONGS_DIR = new File("C:\\Games\\Etterna\\Songs");
-    public static final File OUTPUT_DIR = new File("G:\\Games\\osu!2\\Songs\\Songs\\- - - - Test Shit");
+    //    public static final File OUTPUT_DIR = new File("G:\\Games\\osu!\\Songs\\- - - - Test Shit");
+    public static final File OUTPUT_DIR = new File("G:\\Games\\osu!\\Songs\\- - - - Converts (24-05-2022)");
 
-    public static void main(final String[] args) throws SQLException, InterruptedException {
+    public static void main(final String[] args) throws SQLException, IOException {
         final AsyncAudioService aas = new AsyncAudioService(
-                Executors.newWorkStealingPool(8),
+                Executors.newWorkStealingPool(16),
                 new FFMPEG()
         );
 
@@ -56,18 +67,39 @@ public class Main {
         );
 
         try {
-            Instant start = Instant.now();
-            converter.start(OUTPUT_DIR, xs -> {
-                final var x = xs.get(0);
-                System.out.printf("[SKIP]\t%-64s", x.getEtternaFile().getSmFile());
-            });
+            final Instant start = Instant.now();
+            converter.start(
+                    OUTPUT_DIR, Executors.newWorkStealingPool(8), 8,
+                    () -> System.out.printf(
+                            "[UPDATE] Completed: %-6s Active: %-6s Total: %-6s "
+                                    + "Elapsed Time: %sms%n",
+                            aas.getCompletedTasks(),
+                            aas.getActiveTasks(),
+                            aas.getTotalTasks(),
+                            Duration.between(start, Instant.now()).toMillis()
+                    ));
 
             aas.getEs().shutdown();
-            aas.getEs().awaitTermination(6000, TimeUnit.HOURS);
+            while (!aas.getEs().awaitTermination(10, TimeUnit.SECONDS)) {
+                System.out.printf(
+                        "[UPDATE] Completed: %-6s Active: %-6s Total: %-6s "
+                                + "Elapsed Time: %sms%n",
+                        aas.getCompletedTasks(),
+                        aas.getActiveTasks(),
+                        aas.getTotalTasks(),
+                        Duration.between(start, Instant.now()).toMillis()
+                );
+            }
             System.out.printf("Time taken: %sms%n",
                     Duration.between(start, Instant.now()).toMillis()
             );
-        } catch (final IOException e) {
+            System.out.printf(
+                    "[UPDATE] Completed: %-4s Active: %-4s Total: %-4s%n",
+                    aas.getCompletedTasks(),
+                    aas.getActiveTasks(),
+                    aas.getTotalTasks()
+            );
+        } catch (final Exception e) {
             e.printStackTrace();
             System.err.println("[MALFORMED ROOT DIRECTORY] :: " + SONGS_DIR);
         }
@@ -117,7 +149,7 @@ public class Main {
     private static void onAudioQueued(final String smFileAbsPath,
                                       final File audioFile,
                                       final Future<Boolean> future) {
-        System.out.printf("[QUEUED] %-64s%n", audioFile.getAbsolutePath());
+
     }
 
     private static boolean onOsuFail(final CachedNoteInfo info,

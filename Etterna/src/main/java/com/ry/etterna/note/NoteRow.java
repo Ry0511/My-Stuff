@@ -116,9 +116,10 @@ public class NoteRow extends Row<Note> implements Iterable<Note> {
         final char empty = '-';
 
         forEach(x -> sb.append(
-                (x.getStartNote().isTap() || x.getStartNote().isHoldHead())
-                ? note
-                : empty));
+                x.getStartNote().isMinaAssessedNote()
+                        ? note
+                        : empty));
+
         return NOTE_MAPPING.get(sb.toString());
     }
 }

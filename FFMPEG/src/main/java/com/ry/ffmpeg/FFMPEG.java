@@ -43,6 +43,10 @@ public final class FFMPEG {
         this.executor = ex;
     }
 
+    public FFMPEG() {
+        this.executor = null;
+    }
+
     /**
      * Creates a CLI Task which operates under with some FFMPEG instance.
      *
@@ -64,8 +68,10 @@ public final class FFMPEG {
      *
      * @param args The ffmpeg command array.
      * @return Future of the currently executing task.
+     * @throws UnsupportedOperationException If the executor is null.
      */
     public Future<Process> exec(final String... args) {
+        if (executor == null) throw new UnsupportedOperationException();
         return executor.submit(() -> create(getFfmpeg(), args).startAndWait());
     }
 

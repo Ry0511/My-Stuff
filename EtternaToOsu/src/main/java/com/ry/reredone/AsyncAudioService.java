@@ -112,6 +112,10 @@ public class AsyncAudioService {
      * already existed.
      */
     public boolean addCompletedTask(final String name) {
-        return this.startedConversions.add(name);
+        final boolean b = this.startedConversions.add(name);
+        if (b) {
+            this.completedTasks.getAndIncrement();
+        }
+        return b;
     }
 }

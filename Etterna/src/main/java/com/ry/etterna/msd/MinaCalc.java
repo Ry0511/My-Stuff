@@ -81,11 +81,11 @@ public final class MinaCalc {
     // Todo this can be optimised.
 
     @Value
-    private static class RawNotes {
+    public static class RawNotes {
         int[] notes;
         float[] times;
 
-        RawNotes(final EtternaNoteInfo info) {
+        public RawNotes(final EtternaNoteInfo info) {
 
             List<Integer> notes = new ArrayList<>();
             List<Float> times = new ArrayList<>();
@@ -107,30 +107,8 @@ public final class MinaCalc {
             this.times = new float[notes.size()];
             for (int i = 0; i < notes.size(); i++) {
                 this.notes[i] = notes.get(i);
-                this.times[i] = times.get(i) ;
+                this.times[i] = times.get(i);
             }
         }
-    }
-
-    public static void main(String[] args) throws IOException {
-        // todo Find out why the std::clamp function is throwing assertion
-        //  errors; it seems to only happen in the CJOHAnchor pmod.
-        //  removing the base cap with a hardcoded value fixes the issue.
-        EtternaFile file = new EtternaFile(new File("C:\\Games\\Etterna\\Songs2\\Nuclear Blast JS Awesome Bomb Filez 5\\FUTURE DOMINATORS (IcyWorld)\\05 FUTURE DOMINATORS.sm"));
-
-        file.getNoteInfo().stream().findFirst().ifPresent(x -> {
-            x.timeNotesWith(file.getTimingInfo());
-
-            RawNotes n = new RawNotes(x);
-
-            MSD msd = MSD.initFromFloats(getMSDForRateAndGoal(
-                    n.getNotes(),
-                    n.getTimes(),
-                    0.93F,
-                    1.F
-            ));
-
-            System.out.println(msd.toString());
-        });
     }
 }
