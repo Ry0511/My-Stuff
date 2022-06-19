@@ -1,4 +1,4 @@
-package com.ry.useful.old.property;
+package com.ry.useful.property;
 
 import com.ry.useful.MutatingValue;
 import com.ry.useful.StringUtils;

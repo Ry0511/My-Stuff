@@ -1,4 +1,4 @@
-package com.ry.useful.old.property;
+package com.ry.useful.property;
 
 /**
  * Java interface created on 06/04/2022 for usage in project FunctionalUtils.

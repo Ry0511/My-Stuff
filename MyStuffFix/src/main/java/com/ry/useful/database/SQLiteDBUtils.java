@@ -1,4 +1,4 @@
-package com.ry.useful.old.database;
+package com.ry.useful.database;
 
 import com.ry.useful.Failable;
 import lombok.AccessLevel;

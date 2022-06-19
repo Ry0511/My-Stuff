@@ -1,4 +1,4 @@
-package com.ry.useful.old.property;
+package com.ry.useful.property;
 
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
