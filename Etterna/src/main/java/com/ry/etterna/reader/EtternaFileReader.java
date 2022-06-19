@@ -1,10 +1,10 @@
 package com.ry.etterna.reader;
 
 import com.ry.etterna.note.EtternaNoteInfo;
-import com.ry.useful.old.property.ExtractedProperty;
-import com.ry.useful.old.property.Mapper;
-import com.ry.useful.old.property.PropertyReader;
-import com.ry.useful.old.property.SimpleStringProperty;
+import com.ry.useful.property.ExtractedProperty;
+import com.ry.useful.property.Mapper;
+import com.ry.useful.property.PropertyReader;
+import com.ry.useful.property.SimpleStringProperty;
 import lombok.NonNull;
 
 import java.io.File;
