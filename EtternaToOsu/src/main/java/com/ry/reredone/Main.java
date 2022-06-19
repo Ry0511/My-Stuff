@@ -48,7 +48,7 @@ public class Main {
     public static final File CACHE_FILE = new File("C:\\Games\\Etterna\\Cache\\cache.db");
     public static final File SONGS_DIR = new File("C:\\Games\\Etterna\\Songs");
     //    public static final File OUTPUT_DIR = new File("G:\\Games\\osu!\\Songs\\- - - - Test Shit");
-    public static final File OUTPUT_DIR = new File("G:\\Games\\osu!\\Songs\\- - - - Converts (24-05-2022)");
+    public static final File OUTPUT_DIR = new File("G:\\Games\\osu!\\Songs\\- - - - Converts (14-06-22)");
 
     public static void main(final String[] args) throws SQLException, IOException {
         final AsyncAudioService aas = new AsyncAudioService(

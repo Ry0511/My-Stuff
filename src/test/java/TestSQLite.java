@@ -1,5 +1,5 @@
-import com.ry.useful.database.Column;
-import com.ry.useful.database.SQLiteResultMap;
+import com.ry.useful.old.database.Column;
+import com.ry.useful.old.database.SQLiteResultMap;
 
 /**
  * Java class created on 06/04/2022 for usage in project FunctionalUtils.

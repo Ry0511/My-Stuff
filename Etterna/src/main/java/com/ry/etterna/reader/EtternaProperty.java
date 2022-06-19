@@ -2,24 +2,22 @@ package com.ry.etterna.reader;
 
 import com.ry.etterna.note.EtternaNoteInfo;
 import com.ry.useful.MutatingValue;
-import com.ry.useful.property.Mapper;
-import com.ry.useful.property.NamedRegexProperty;
-import com.ry.useful.property.NamedRegexProperty.ExtractionMode;
-import com.ry.useful.property.SimpleStringProperty;
+import com.ry.useful.old.property.Mapper;
+import com.ry.useful.old.property.NamedRegexProperty;
+import com.ry.useful.old.property.NamedRegexProperty.ExtractionMode;
+import com.ry.useful.old.property.SimpleStringProperty;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.ry.useful.property.NamedRegexProperty.ExtractionMode.MANY;
-import static com.ry.useful.property.NamedRegexProperty.ExtractionMode.SINGLETON;
+import static com.ry.useful.old.property.NamedRegexProperty.ExtractionMode.MANY;
+import static com.ry.useful.old.property.NamedRegexProperty.ExtractionMode.SINGLETON;
 
 /**
  * Java enum created on 07/04/2022 for usage in project FunctionalUtils.

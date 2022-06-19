@@ -1,6 +1,6 @@
 package com.ry.etterna.db;
 
-import com.ry.useful.database.SQLiteDB;
+import com.ry.useful.old.database.SQLiteDB;
 import lombok.NonNull;
 
 import java.io.File;

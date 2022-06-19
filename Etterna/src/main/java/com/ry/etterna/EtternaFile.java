@@ -7,7 +7,7 @@ import com.ry.etterna.reader.EtternaTiming;
 import com.ry.useful.Entity;
 import com.ry.useful.MutatingValue;
 import com.ry.useful.StringUtils;
-import com.ry.useful.property.SimpleStringProperty;
+import com.ry.useful.old.property.SimpleStringProperty;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;

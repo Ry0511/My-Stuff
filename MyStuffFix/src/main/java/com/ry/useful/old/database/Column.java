@@ -1,4 +1,4 @@
-package com.ry.useful.database;
+package com.ry.useful.old.database;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

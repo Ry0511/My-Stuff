@@ -75,7 +75,10 @@ public class CachedNoteInfo {
 
                         // Skip on fail
                     } catch (final SQLException e) {
-                        System.err.println("[SQL ERROR] " + x.getSmFile());
+                        System.err.printf(
+                                "[SQL ERROR] Skipping: '%s' reason: '%s'%n",
+                                x.getSmFile(), e.getMessage()
+                        );
                     }
                 }
             }

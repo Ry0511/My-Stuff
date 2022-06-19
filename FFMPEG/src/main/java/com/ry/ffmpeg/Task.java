@@ -10,6 +10,9 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.Arrays;
+import java.util.StringJoiner;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Java class created on 23/04/2022 for usage in project FunctionalUtils.
@@ -25,6 +28,8 @@ public class Task {
     @Getter(AccessLevel.PRIVATE)
     private final ProcessBuilder pb;
 
+    private final String[] args;
+
     /**
      * Creates the task from the string arguments.
      *
@@ -33,6 +38,7 @@ public class Task {
     public Task(final String... args) {
         this.pb = new ProcessBuilder(args);
         pb.redirectErrorStream(true);
+        this.args = args;
     }
 
     /**
@@ -55,12 +61,15 @@ public class Task {
     public Process startAndWait() throws InterruptedException, IOException {
         final Process p = pb.start();
 
-        final var in = in(p);
-        while (in.readLine() != null) {
-            // ignored
+        final var in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+        String line;
+        while ((line = in.readLine()) != null) {
+            // Just consume the stream
         }
-        in.close();
         p.waitFor();
+        in.close();
+
         return p;
     }
 

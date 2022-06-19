@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * Java class created on 23/04/2022 for usage in project FunctionalUtils.
@@ -41,6 +42,15 @@ public final class FFMPEG {
      */
     public FFMPEG(final ExecutorService ex) {
         this.executor = ex;
+    }
+
+    /**
+     * @return {@code true} if ffmpeg/bin or ffmpeg.exe could be found on the
+     * users path.
+     */
+    public static boolean isFfmpegOnPath() {
+        final String p = System.getProperty("Path");
+        return Pattern.compile("(?i)(ffmpeg.bin;)|(ffmpeg.exe;)").matcher(p).find();
     }
 
     public FFMPEG() {
@@ -85,7 +95,9 @@ public final class FFMPEG {
      */
     public Process execAndWait(final String... args)
             throws IOException, InterruptedException {
-        return create(getFfmpeg(), args).startAndWait();
+         final Process p = create(getFfmpeg(), args).startAndWait();
+         if (p.isAlive()) p.destroy();
+         return p;
     }
 
     /**

@@ -76,7 +76,6 @@ public class AsyncAudioService {
                     return false;
                 }
             });
-
             return Optional.of(task);
         }
 

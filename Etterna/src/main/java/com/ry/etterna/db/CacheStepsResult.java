@@ -1,8 +1,8 @@
 package com.ry.etterna.db;
 
 import com.ry.etterna.msd.MSD;
-import com.ry.useful.database.Column;
-import com.ry.useful.database.SQLiteResultMap;
+import com.ry.useful.old.database.Column;
+import com.ry.useful.old.database.SQLiteResultMap;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
