@@ -210,12 +210,15 @@ public class Converter {
      * the total number of tasks for each file (Maximum).
      * @param onAwait Invoked every 'k' seconds while awaiting the termination
      * of the conversion process. Used mainly as a Ping->Pong.
-     * @throws Exception If any occur.
+     * @throws InterruptedException If interrupted whilst waiting for the
+     *                              process to finish.
+     * @throws IOException          If the output current root directory is
+     *                              invalid.
      */
     public void start(final File outDir,
                       final ExecutorService asyncBaseRateService,
                       final int memTicker,
-                      final Runnable onAwait) throws Exception {
+                      final Runnable onAwait) throws IOException, InterruptedException {
         final EtternaIterator iter = new EtternaIterator(this.rootDir);
         iter.setFilter(EtternaFile::isStandard);
 
@@ -246,7 +249,8 @@ public class Converter {
                 });
 
         asyncBaseRateService.shutdown();
-        while (!asyncBaseRateService.awaitTermination(30, TimeUnit.SECONDS)) onAwait.run();
+        while (!asyncBaseRateService.awaitTermination(30, TimeUnit.SECONDS))
+            onAwait.run();
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -356,6 +360,14 @@ public class Converter {
     // Interfaces used to allow the caller to invoke calls to change
     // the final output without affecting the overall control flow.
     ///////////////////////////////////////////////////////////////////////////
+
+    public static interface ConversionListener extends
+            OsuBuilderMutator,
+            OsuFileFailHandler,
+            QueuedAudioHandler,
+            BiPredicate<MSD, MSD> {
+        // Just a wrapper interface.
+    }
 
     public static interface OsuBuilderMutator {
         /**

@@ -1,4 +1,4 @@
-package com.ry.useful.property;
+package com.ry.useful.old.property;
 
 import com.ry.useful.StringUtils;
 import lombok.AllArgsConstructor;

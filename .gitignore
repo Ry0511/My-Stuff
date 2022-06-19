@@ -1,6 +1,7 @@
-
-/FFMPEG/target/test-classes/
-/FFMPEG/target/classes/com/ry/ffmpeg/
-/EtternaToOsu/target/test-classes/com/ry/etternaToOsu/
-/Etterna/target/classes/com/ry/etterna/util/
-/OsuBuilder/target/classes/com/ry/osu/builder/
+/out/
+/VSRG/target/
+/Etterna/target/
+/EtternaToOsu/target/
+/FFMPEG/target/
+/MyStuffFix/target/
+/OsuBuilder/target/

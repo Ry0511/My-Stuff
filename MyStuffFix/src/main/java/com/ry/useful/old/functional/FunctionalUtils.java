@@ -1,4 +1,4 @@
-package com.ry.useful.functional;
+package com.ry.useful.old.functional;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
