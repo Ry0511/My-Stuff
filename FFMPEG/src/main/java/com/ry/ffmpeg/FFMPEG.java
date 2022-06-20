@@ -2,123 +2,163 @@ package com.ry.ffmpeg;
 
 import lombok.Data;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 
 /**
- * Java class created on 23/04/2022 for usage in project FunctionalUtils.
+ * Java class created on 19/06/2022 for usage in project My-Stuff.
  *
  * @author -Ry
  */
 @Data
-public final class FFMPEG {
+public class FFMPEG {
 
     /**
-     * Static FFMPEG instance which utilises a work stealing pot with an
-     * unbounded level of parallelism.
+     * The executable ffmpeg reference.
      */
-    public static final FFMPEG INSTANCE
-            = new FFMPEG(Executors.newWorkStealingPool(4));
+    private final String executable;
 
     /**
-     * The ffmpeg command executor.
+     * If true, then when creating commands the executable will be encased in
+     * double quotes.
      */
-    private final ExecutorService executor;
+    private final boolean isQuoteFfmpeg;
 
     /**
-     * The ffmpeg path for execution by default this is "ffmpeg" and assumes the
-     * user has it on their PATH.
+     * @return The executable ffmpeg reference.
+     * @see #isQuoteFfmpeg()
      */
-    private String ffmpeg = "ffmpeg";
+    public String getExecutable() {
+        if (isQuoteFfmpeg()) {
+            return "\"" + executable + "\"";
+        } else {
+            return executable;
+        }
+    }
 
     /**
-     * Constructs a ffmpeg instance from the base executor.
+     * @param args The command for the process builder.
+     * @return Default process builder with error redirected.
+     */
+    private static ProcessBuilder initProcess(final String[] args) {
+        final ProcessBuilder pb = new ProcessBuilder(args);
+        pb.redirectErrorStream(true);
+        return pb;
+    }
+
+    /**
+     * @param p The process to wrap a buffered reader for.
+     * @return The process input stream wrapped in a buffered reader.
+     */
+    private static BufferedReader initOutputStream(final Process p) {
+        return new BufferedReader(new InputStreamReader(p.getInputStream()));
+    }
+
+    /**
+     * Executes the provided command, under the ffmpeg executable.
      *
-     * @param ex The executor.
-     */
-    public FFMPEG(final ExecutorService ex) {
-        this.executor = ex;
-    }
-
-    /**
-     * @return {@code true} if ffmpeg/bin or ffmpeg.exe could be found on the
-     * users path.
-     */
-    public static boolean isFfmpegOnPath() {
-        final String p = System.getProperty("Path");
-        return Pattern.compile("(?i)(ffmpeg.bin;)|(ffmpeg.exe;)").matcher(p).find();
-    }
-
-    public FFMPEG() {
-        this.executor = null;
-    }
-
-    /**
-     * Creates a CLI Task which operates under with some FFMPEG instance.
-     *
-     * @param mpeg The ffmpeg reference.
-     * @param args The command arguments.
-     * @return New task which is [ffmpeg, args[0], args[k]]
-     */
-    private static Task create(final String mpeg,
-                               final String[] args) {
-        final String[] cmd = new String[args.length + 1];
-        cmd[0] = FFMPEGUtils.quote(mpeg);
-        System.arraycopy(args, 0, cmd, 1, args.length);
-
-        return new Task(cmd);
-    }
-
-    /**
-     * Executes the provided command asynchronously.
-     *
-     * @param args The ffmpeg command array.
-     * @return Future of the currently executing task.
-     * @throws UnsupportedOperationException If the executor is null.
-     */
-    public Future<Process> exec(final String... args) {
-        if (executor == null) throw new UnsupportedOperationException();
-        return executor.submit(() -> create(getFfmpeg(), args).startAndWait());
-    }
-
-    /**
-     * Executes the provided command and blocks until the command returns.
-     *
-     * @param args The command to run.
-     * @return The completed process.
+     * @param cmd The command to run.
+     * @return The process exit code.
      * @throws IOException          If any occur.
-     * @throws InterruptedException If while waiting, interrupted.
+     * @throws InterruptedException If while waiting for the process to exit
+     *                              normally the calling thread is interrupted.
+     * @throws ExecutionException   If process was interrupted before finishing
+     *                              and had to be cancelled.
      */
-    public Process execAndWait(final String... args)
-            throws IOException, InterruptedException {
-         final Process p = create(getFfmpeg(), args).startAndWait();
-         if (p.isAlive()) p.destroy();
-         return p;
+    public int exec(final String[] cmd) throws IOException, InterruptedException, ExecutionException {
+        final ProcessBuilder pb = initProcess(
+                Stream.concat(Stream.of(cmd), Arrays.stream(cmd))
+                        .toArray(String[]::new)
+        );
+
+        final Process p = pb.start();
+        try (final BufferedReader out = initOutputStream(p)) {
+            while ((out.readLine()) != null) {
+                // Just flushing the stream
+            }
+            try {
+                p.onExit().get();
+            } catch (final InterruptedException ex) {
+                return p.destroyForcibly().waitFor();
+            }
+        }
+
+        return p.exitValue();
     }
 
     /**
-     * @param path The new ffmpeg path.
-     */
-    public synchronized void setFfmpeg(final String path) {
-        this.ffmpeg = path;
-    }
-
-    /**
-     * Terminates this FFMPEG instance.
+     * Executes the provided command, under the ffmpeg executable.
      *
-     * @param timeout The maximum time to wait for currently active tasks.
-     * @param unit Timescale of the timeout (MS, Days, etc)
-     * @return {@code true} if the termination has been completed, else {@code
-     * false} if some tasks are still running.
-     * @throws InterruptedException If while waiting, interrupted.
+     * @param cmd The command to run.
+     * @return The process exit code.
+     * @throws IOException          If any occur.
+     * @throws InterruptedException If while waiting for the process to exit
+     *                              normally the calling thread is interrupted.
+     * @throws ExecutionException   If process was interrupted before finishing
+     *                              and had to be cancelled.
      */
-    public boolean close(final long timeout,
-                         final TimeUnit unit) throws InterruptedException {
-        executor.shutdown();
-        return executor.awaitTermination(timeout, unit);
+    public int exec(final IOCommand cmd) throws IOException, ExecutionException, InterruptedException {
+        final var listener = cmd.getListener();
+        final ProcessBuilder pb = initProcess(cmd.build(getExecutable()));
+
+        // Start process
+        final Process p = pb.start();
+        if (listener != null) {
+            listener.onStart(cmd);
+        }
+
+        // Read the output
+        try (final BufferedReader out = initOutputStream(p)) {
+            // Not sure if this optimisation is really needed I never tested it.
+            // It just seemed like an easy fix.
+            if (listener != null) {
+                String line;
+                while ((line = out.readLine()) != null) {
+                    listener.onMessage(cmd, line);
+                }
+            } else {
+                while (out.readLine() != null) {
+                    // Flush output
+                }
+            }
+        }
+
+        // When finished invoke listener
+        try {
+            p.onExit().thenApply(x -> {
+                if (listener != null) {
+                    listener.onComplete(cmd, x.exitValue());
+                }
+                return null;
+            }).get();
+        } catch (final InterruptedException ex) {
+            return p.destroyForcibly().waitFor();
+        }
+
+        return p.exitValue();
+    }
+
+    /**
+     * Runs the provided io command asynchronously.
+     *
+     * @param cmd The command the run.
+     * @return Future representing the async task. Upon get, if null is returned
+     * then an exception occurred, else if not null then the execution was
+     * handled normally.
+     */
+    public CompletableFuture<Integer> execAsync(final IOCommand cmd) {
+        // Never knew about this API
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return exec(cmd);
+            } catch (final IOException | ExecutionException | InterruptedException e) {
+                return null;
+            }
+        });
     }
 }

@@ -1,4 +1,4 @@
-package com.ry.ffmpegRvmp;
+package com.ry.ffmpeg;
 
 import lombok.Builder;
 import lombok.Data;
