@@ -1,12 +1,10 @@
 package com.ry.etterna.msd;
 
-import com.ry.etterna.EtternaFile;
 import com.ry.etterna.note.EtternaNoteInfo;
 import com.ry.vsrg.sequence.TimingSequence;
 import lombok.Value;
 
-import java.io.File;
-import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,9 +18,17 @@ public final class MinaCalc {
     // Todo I have not tested this and don't know if it can handle a wide range
     //  of files.
 
+    private static final String LIB_NAME = "MinaCalc_Native_FNUtils.dll";
+
     // Loads the MinaDll file.
     static {
-        System.loadLibrary("MinaCalcNative/MinaCalc-Native-FNUtils/cmake-build-debug/MinaCalc_Native_FNUtils");
+        final URL url = MinaCalc.class.getResource(LIB_NAME);
+
+        if (url != null) {
+            System.load(url.getPath());
+        } else {
+            throw new IllegalStateException("Failed to load MinaCalc native bindings...");
+        }
     }
 
     /**

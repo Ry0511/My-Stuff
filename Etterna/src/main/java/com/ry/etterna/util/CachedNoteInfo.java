@@ -7,6 +7,7 @@ import com.ry.etterna.msd.MSD;
 import com.ry.etterna.note.EtternaNoteInfo;
 import com.ry.useful.StreamUtils;
 import lombok.Data;
+import lombok.extern.apachecommons.CommonsLog;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -26,6 +27,7 @@ import java.util.stream.Stream;
  * @author -Ry
  */
 @Data
+@CommonsLog
 public class CachedNoteInfo implements MinaCalculated {
 
     /**
@@ -70,16 +72,17 @@ public class CachedNoteInfo implements MinaCalculated {
                 if (info.isDanceSingle()) {
                     info.timeNotesWith(x.getTimingInfo());
                     try {
-                        info.queryStepsCache(db).ifPresent(cache -> xs.add(
-                                new CachedNoteInfo(cache, info)
-                        ));
+                        final CacheStepsResult cache = info.queryStepsCache(db).orElse(null);
+
+                        if (cache != null) {
+                            xs.add(new CachedNoteInfo(cache, info));
+                        } else {
+                            log.warn("Could not find Cached MSD Info for File: " + x.getSmFile());
+                        }
 
                         // Skip on fail
                     } catch (final SQLException e) {
-                        System.err.printf(
-                                "[SQL ERROR] Skipping: '%s' reason: '%s'%n",
-                                x.getSmFile(), e.getMessage()
-                        );
+                        log.error("File: " + x.getSmFile() + "; Couldn't be processed; reason: " + e + "; Skipping this chart.");
                     }
                 }
             }
