@@ -119,8 +119,9 @@ public class IOCommand {
          * Invoked when this command has started execution.
          *
          * @param cmd The command that has started execution.
+         * @param p The underlying process that was started.
          */
-        void onStart(final IOCommand cmd);
+        void onStart(final IOCommand cmd, final Process p);
 
         /**
          * Invoked whenever the standard output has received a new line.

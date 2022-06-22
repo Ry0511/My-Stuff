@@ -109,7 +109,7 @@ public class FFMPEG {
         // Start process
         final Process p = pb.start();
         if (listener != null) {
-            listener.onStart(cmd);
+            listener.onStart(cmd, p);
         }
 
         // Read the output
