@@ -5,15 +5,14 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.io.filefilter.IOFileFilter;
-import org.apache.commons.io.filefilter.SuffixFileFilter;
+import lombok.extern.apachecommons.CommonsLog;
+import lombok.extern.log4j.Log4j;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -22,14 +21,9 @@ import java.util.stream.Stream;
  * @author -Ry
  */
 @Data
+@CommonsLog
 @Setter(AccessLevel.PRIVATE)
 public class EtternaIterator {
-
-    /**
-     * Suffix file filter for '.SM' Files will extend this for '.SSC'
-     * functionality once I verify that my FileReader won't break.
-     */
-    public static final IOFileFilter SM_FILTER = new SuffixFileFilter(".sm");
 
     /**
      * The original root directory being iterated.
@@ -41,12 +35,6 @@ public class EtternaIterator {
      */
     @Getter(AccessLevel.PRIVATE)
     private final Stream<Path> rootStream;
-
-    /**
-     * The current etterna file filter used to get next elements.
-     */
-    @Setter(AccessLevel.PUBLIC)
-    private Predicate<EtternaFile> filter;
 
     /**
      * @param root Root directory containing potentially Zero Stepmania files.
@@ -63,6 +51,7 @@ public class EtternaIterator {
      * @return Stream of all acceptable etterna files.
      */
     public Stream<EtternaFile> getEtternaStream() {
+        log.info("Walking through root: " + getRoot());
         return this.getRootStream()
                 .map(Path::toFile)
                 .filter(File::isFile)
@@ -81,17 +70,9 @@ public class EtternaIterator {
      */
     private Optional<EtternaFile> mapFile(final File file) {
         try {
-            final EtternaFile f = new EtternaFile(file);
-            if (getFilter().test(f)) {
-                return Optional.of(f);
-            } else {
-                return Optional.empty();
-            }
+            return Optional.of(new EtternaFile(file));
         } catch (final Exception e) {
-            System.err.printf(
-                    "[IO-ERROR] '%s' failed...%n", file.getAbsolutePath()
-            );
-            e.printStackTrace();
+            log.warn("File: " + file + "; produced exception " + e.toString() + "; Skipping this file.");
             return Optional.empty();
         }
     }

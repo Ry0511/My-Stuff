@@ -5,8 +5,9 @@ import com.ry.etterna.db.CacheDB;
 import com.ry.etterna.db.CacheStepsResult;
 import com.ry.etterna.msd.MSD;
 import com.ry.etterna.note.EtternaNoteInfo;
-import com.ry.etterna.reader.EtternaTiming;
+import com.ry.useful.StreamUtils;
 import lombok.Data;
+import lombok.extern.apachecommons.CommonsLog;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -15,8 +16,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiPredicate;
-import java.util.function.Consumer;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 
 /**
@@ -25,7 +27,8 @@ import java.util.function.Consumer;
  * @author -Ry
  */
 @Data
-public class CachedNoteInfo {
+@CommonsLog
+public class CachedNoteInfo implements MinaCalculated {
 
     /**
      * Rounding mode for single radix mutations.
@@ -69,16 +72,17 @@ public class CachedNoteInfo {
                 if (info.isDanceSingle()) {
                     info.timeNotesWith(x.getTimingInfo());
                     try {
-                        info.queryStepsCache(db).ifPresent(cache -> xs.add(
-                                new CachedNoteInfo(cache, info)
-                        ));
+                        final CacheStepsResult cache = info.queryStepsCache(db).orElse(null);
+
+                        if (cache != null) {
+                            xs.add(new CachedNoteInfo(cache, info));
+                        } else {
+                            log.warn("Could not find Cached MSD Info for File: " + x.getSmFile());
+                        }
 
                         // Skip on fail
                     } catch (final SQLException e) {
-                        System.err.printf(
-                                "[SQL ERROR] Skipping: '%s' reason: '%s'%n",
-                                x.getSmFile(), e.getMessage()
-                        );
+                        log.error("File: " + x.getSmFile() + "; Couldn't be processed; reason: " + e + "; Skipping this chart.");
                     }
                 }
             }
@@ -156,83 +160,52 @@ public class CachedNoteInfo {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    // Iterating rates
+    // Streaming rates
     ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Creates a stream populated with this chart and its MSD values for all
+     * rates in the provided range.
+     *
+     * @param min The min rate.
+     * @param max The max rate.
+     */
+    @Override
+    public Stream<MSDChart> streamRateInRange(final BigDecimal min, final BigDecimal max) {
+
+        if (min.compareTo(new BigDecimal("0.7")) < 0) {
+            throw new IllegalStateException("Rate " + min + " unsupported.");
+        }
+
+        if (max.compareTo(new BigDecimal("2.0")) > 0) {
+            throw new IllegalStateException("Rate " + max + " unsupported.");
+        }
+
+        return StreamUtils.createStreamLazily(supplyChart(min.toPlainString(), max.toPlainString()));
+    }
 
     /**
      * @param min Min (Start).
      * @param max Max (End).
-     * @param inc Increment.
-     * @param rateHandle Action.
      */
-    private void forEachRateInRange(final String min,
-                                    final String max,
-                                    final String inc,
-                                    final Consumer<BigDecimal> rateHandle) {
-        BigDecimal i = new BigDecimal(min);
+    private Supplier<MSDChart> supplyChart(final String min,
+                                           final String max) {
+        final AtomicReference<BigDecimal> i = new AtomicReference<>(new BigDecimal(min));
+        final BigDecimal increment = new BigDecimal("0.05");
         final BigDecimal ma = new BigDecimal(max);
-        final BigDecimal increment = new BigDecimal(inc);
+        return () -> {
 
-        while (i.compareTo(ma) <= 0) {
-            rateHandle.accept(i);
-            i = i.add(increment, MathContext.DECIMAL64);
-        }
-    }
+            if (i.get().compareTo(ma) <= 0) {
+                final String rate = i.get().toPlainString();
+                final Optional<MSD> msd = getMSDForRate(rate);
 
-    /**
-     * For each rate in range which adheres to the MSD Filter rule, apply the
-     * given action.
-     *
-     * @param min The minimum rate.
-     * @param max The maximum rate.
-     * @param msdFilter The MSD Filter, first argument is the 1.0 MSD, and the
-     * second one is the k-rate MSD.
-     * @param action The action to apply if the filter is true.
-     */
-    public void forEachRate(final String min,
-                            final String max,
-                            final BiPredicate<MSD, MSD> msdFilter,
-                            final RatedChartHandler action) {
-        final MSD normal
-                = getMSDForRate("1.0").orElseThrow(RuntimeException::new);
-        final EtternaTiming baseTiming = getEtternaFile().getTimingInfo();
+                // Update to the next
+                i.set(i.get().add(increment, MathContext.DECIMAL64));
 
-        forEachRateInRange(min, max, "0.05", rate -> {
-            getMSDForRate(rate.toPlainString()).ifPresent(ratedMSD -> {
-                if (msdFilter.test(normal, ratedMSD)) {
-                    this.info.timeNotesWith(baseTiming.rated(rate));
-                    action.accept(this, rate, ratedMSD);
-                }
-            });
-        });
-    }
-
-    /**
-     * For each rate 0.7 to 2.0 in 0.05 increments.
-     *
-     * @param filter The MSD Filter.
-     * @param action The action to apply.
-     */
-    public void forEachRateFull(final BiPredicate<MSD, MSD> filter,
-                                final RatedChartHandler action) {
-        forEachRate("0.7", "2.0", filter, action);
-    }
-
-    /**
-     * For each rate 0.7 to 1.5 in 0.05 increments.
-     *
-     * @param filter The MSD Filter.
-     * @param action The action to apply.
-     */
-    public void forEachRateHalf(final BiPredicate<MSD, MSD> filter,
-                                final RatedChartHandler action) {
-        forEachRate("0.7", "1.5", filter, action);
-    }
-
-    /**
-     * Handles a rated instance of a chart.
-     */
-    public static interface RatedChartHandler {
-        void accept(CachedNoteInfo info, BigDecimal rate, MSD msd);
+                return MSDChart.of(rate, msd.orElse(null), getInfo());
+            } else {
+                return null;
+            }
+        };
     }
 }
