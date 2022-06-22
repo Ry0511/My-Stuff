@@ -15,6 +15,16 @@ import java.util.List;
  */
 public final class MinaCalc {
 
+    //
+    // Going to put some information here; I have tested this for memory issues
+    // I couldn't find any significant, nor any issues at that, though it is possible
+    // to have memory issues. I have tested this and though it doesn't give
+    // perfectly accurate results it does give a number close enough to the
+    // expected to just knock it off as a version difference. I don't know if
+    // loading the lib through a .jar is possible/functions this will need to
+    // be tested if it fails it will be immediately apparent.
+    //
+
     // Todo I have not tested this and don't know if it can handle a wide range
     //  of files.
 
@@ -48,14 +58,14 @@ public final class MinaCalc {
 
     /**
      * @param notes All notes to test.
-     * @param times The start time of each note, that is, zip xs zs := [(x,z)]
+     * @param times The start time of each note.
      * @return MSD Value for the above mapped notes.
      */
     public static native float[] getDefaultMSDFor(int[] notes, float[] times);
 
     /**
      * @param notes All notes to calc.
-     * @param times The start time of each note, that is, zip xs zs := [(x,z)]
+     * @param times The start time of each note.
      * @param scoreGoal The score goal to achieve default is 0.93F.
      * @param rate The rate of the chart/notes default is 1.F.
      * @return MSD Value for the above mapped notes.
@@ -77,7 +87,11 @@ public final class MinaCalc {
 
     /**
      * Causes the immediate disposal of the current CalcHandle.
+     *
+     * @deprecated Usage of this method is inherently unsafe and causes the JVM
+     * to crash almost always.
      */
+    @Deprecated
     public static native void dispose();
 
     ///////////////////////////////////////////////////////////////////////////

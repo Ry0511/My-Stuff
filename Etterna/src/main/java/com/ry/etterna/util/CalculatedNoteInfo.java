@@ -38,6 +38,22 @@ public class CalculatedNoteInfo implements MinaCalculated {
     private float scoreGoal = MinaCalc.DEFAULT_SCORE_GOAL;
 
     /**
+     * The raw notes of this chart.
+     */
+    private final MinaCalc.RawNotes notes;
+
+    /**
+     * @param info The note info to calculate the MSD for.
+     */
+    public CalculatedNoteInfo(final EtternaNoteInfo info) {
+        this.info = info;
+        if (info.getCurTimingInfo() == null || !info.getParent().getTimingInfo().equals(info.getCurTimingInfo())) {
+            info.timeNotesWith(info.getParent().getTimingInfo());
+        }
+        this.notes = new MinaCalc.RawNotes(info);
+    }
+
+    /**
      * Creates a list of Calculated Note infos from the base etterna charts.
      *
      * @param file The etterna file to process to calculated note info.
@@ -56,20 +72,15 @@ public class CalculatedNoteInfo implements MinaCalculated {
     @Override
     public Optional<MSD> getMSDForRate(final String rate) {
 
-        // Time notes if untimed
-        if (getInfo().getCurTimingInfo() == null || !getInfo().getCurTimingInfo().equals(getInfo().getParent().getTimingInfo())) {
-            getInfo().timeNotesWith(getInfo().getParent().getTimingInfo());
-        }
-
         try {
-            final MinaCalc.RawNotes notes = new MinaCalc.RawNotes(getInfo());
             return Optional.of(MSD.initFromFloats(MinaCalc.getMSDForRateAndGoal(
                     notes.getNotes(), notes.getTimes(),
                     getScoreGoal(), Float.parseFloat(rate)
             )));
 
         } catch (final Exception ex) {
-            log.fatal("Mina Calc Failed", ex);
+            log.fatal("Mina Calc encountered a fatal exception", ex);
+            System.exit(-1);
         }
 
         return Optional.empty();
