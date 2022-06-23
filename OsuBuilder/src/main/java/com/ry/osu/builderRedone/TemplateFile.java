@@ -1,17 +1,21 @@
 package com.ry.osu.builderRedone;
 
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
+import lombok.Singular;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Java class created on 23/06/2022 for usage in project My-Stuff.
@@ -19,6 +23,7 @@ import java.util.regex.Pattern;
  * @author -Ry
  */
 @Data
+@Builder
 public class TemplateFile {
 
     /**
@@ -56,8 +61,9 @@ public class TemplateFile {
     /**
      * Map of all changes made to the template file.
      */
+    @Singular("setElement")
     @Getter(AccessLevel.PRIVATE)
-    private final Map<Element, String> changeMap = new HashMap<>();
+    private final Map<Element, String> changeMap;
 
     /**
      * Gets the mapped element value.
@@ -122,6 +128,90 @@ public class TemplateFile {
 
         Element(final String s) {
             name = Pattern.quote(s);
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Builder.
+    ///////////////////////////////////////////////////////////////////////////
+
+    public static class TemplateFileBuilder {
+
+        // I wrote a script to create most of this lol
+
+        public TemplateFileBuilder setAudioFileName(final String audioFileName) {
+            setElement(Element.AUDIO_FILE_NAME, audioFileName);
+            return this;
+        }
+
+        public TemplateFileBuilder setTitle(final String title) {
+            setElement(Element.TITLE, title);
+            return this;
+        }
+
+        public TemplateFileBuilder setTitleUnicode(final String titleUnicode) {
+            setElement(Element.TITLE_UNICODE, titleUnicode);
+            return this;
+        }
+
+        public TemplateFileBuilder setArtist(final String artist) {
+            setElement(Element.ARTIST, artist);
+            return this;
+        }
+
+        public TemplateFileBuilder setArtistUnicode(final String artistUnicode) {
+            setElement(Element.ARTIST_UNICODE, artistUnicode);
+            return this;
+        }
+
+        public TemplateFileBuilder setCreator(final String creator) {
+            setElement(Element.CREATOR, creator);
+            return this;
+        }
+
+        public TemplateFileBuilder setVersion(final String version) {
+            setElement(Element.VERSION, version);
+            return this;
+        }
+
+        public TemplateFileBuilder setSource(final String source) {
+            setElement(Element.SOURCE, source);
+            return this;
+        }
+
+        public TemplateFileBuilder setTags(final String tags) {
+            setElement(Element.TAGS, tags);
+            return this;
+        }
+
+        public TemplateFileBuilder setHpDrain(final String hpDrain) {
+            setElement(Element.HP_DRAIN, hpDrain);
+            return this;
+        }
+
+        public TemplateFileBuilder setOverallDifficulty(final String overallDifficulty) {
+            setElement(Element.OVERALL_DIFFICULTY, overallDifficulty);
+            return this;
+        }
+
+        public TemplateFileBuilder setBackgroundFile(final String backgroundFile) {
+            setElement(Element.BACKGROUND_FILE, backgroundFile);
+            return this;
+        }
+
+        public TemplateFileBuilder setTimingPoints(final String timingPoints) {
+            setElement(Element.TIMING_POINTS, timingPoints);
+            return this;
+        }
+
+        public TemplateFileBuilder setHitObjects(final String hitObjects) {
+            setElement(Element.HIT_OBJECTS, hitObjects);
+            return this;
+        }
+
+        public TemplateFileBuilder streamElements(final BiConsumer<TemplateFileBuilder, Stream<Element>> action) {
+            action.accept(this, Arrays.stream(Element.values()));
+            return this;
         }
     }
 }
