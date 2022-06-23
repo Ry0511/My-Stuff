@@ -1,6 +1,5 @@
 package com.ry.osu.builderRedone;
 
-import com.ry.osu.builder.Template;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
@@ -25,7 +24,7 @@ public class TemplateFile {
     /**
      * The template file resource.
      */
-    private static final URL TEMPLATE_FILE = Template.class.getResource("Template.txt");
+    private static final URL TEMPLATE_FILE = TemplateFile.class.getResource("Template.txt");
 
     /**
      * The total number of characters in the template file.
