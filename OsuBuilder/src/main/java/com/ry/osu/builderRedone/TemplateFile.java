@@ -11,7 +11,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,6 +59,10 @@ public class TemplateFile {
             }
         }
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Actual class code below.
+    ///////////////////////////////////////////////////////////////////////////
 
     /**
      * Map of all changes made to the template file.
@@ -204,8 +210,22 @@ public class TemplateFile {
             return this;
         }
 
+        public TemplateFileBuilder setTimingPoints(final List<TimingPoint> xs) {
+            final StringJoiner sj = new StringJoiner(System.lineSeparator());
+            xs.forEach(x -> sj.add(x.compile()));
+            setElement(Element.TIMING_POINTS, sj.toString());
+            return this;
+        }
+
         public TemplateFileBuilder setHitObjects(final String hitObjects) {
             setElement(Element.HIT_OBJECTS, hitObjects);
+            return this;
+        }
+
+        public TemplateFileBuilder setHitObjects(final List<HitObject> xs) {
+            final StringJoiner sj = new StringJoiner(System.lineSeparator());
+            xs.forEach(x -> sj.add(x.compile()));
+            setElement(Element.HIT_OBJECTS, sj.toString());
             return this;
         }
 
