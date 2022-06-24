@@ -1,5 +1,6 @@
 package com.ry.osu.builderRedone;
 
+import com.ry.useful.StringUtils;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -10,7 +11,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -150,6 +153,12 @@ public class TemplateFile {
             return this;
         }
 
+        public TemplateFileBuilder setAudioFileName(final Path root,
+                                                    final Path audioFile) {
+            setElement(Element.AUDIO_FILE_NAME, root.relativize(audioFile).toString());
+            return this;
+        }
+
         public TemplateFileBuilder setTitle(final String title) {
             setElement(Element.TITLE, title);
             return this;
@@ -160,6 +169,12 @@ public class TemplateFile {
             return this;
         }
 
+        public TemplateFileBuilder setTitleBoth(final String title) {
+            setElement(Element.TITLE, StringUtils.toAscii(title));
+            setElement(Element.TITLE_UNICODE, title);
+            return this;
+        }
+
         public TemplateFileBuilder setArtist(final String artist) {
             setElement(Element.ARTIST, artist);
             return this;
@@ -167,6 +182,12 @@ public class TemplateFile {
 
         public TemplateFileBuilder setArtistUnicode(final String artistUnicode) {
             setElement(Element.ARTIST_UNICODE, artistUnicode);
+            return this;
+        }
+
+        public TemplateFileBuilder setArtistBoth(final String artist) {
+            setElement(Element.ARTIST, StringUtils.toAscii(artist));
+            setElement(Element.ARTIST_UNICODE, artist);
             return this;
         }
 
@@ -195,13 +216,27 @@ public class TemplateFile {
             return this;
         }
 
+        public TemplateFileBuilder setHpDrain(final double drain) {
+            return setHpDrain("" + drain);
+        }
+
         public TemplateFileBuilder setOverallDifficulty(final String overallDifficulty) {
             setElement(Element.OVERALL_DIFFICULTY, overallDifficulty);
             return this;
         }
 
+        public TemplateFileBuilder setOverallDifficulty(final double overallDifficulty) {
+            return setOverallDifficulty("" + overallDifficulty);
+        }
+
         public TemplateFileBuilder setBackgroundFile(final String backgroundFile) {
             setElement(Element.BACKGROUND_FILE, backgroundFile);
+            return this;
+        }
+
+        public TemplateFileBuilder setBackgroundFile(final Path root,
+                                                     final Path bgFile) {
+            setElement(Element.BACKGROUND_FILE, root.relativize(bgFile).toString());
             return this;
         }
 

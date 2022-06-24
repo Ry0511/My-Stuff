@@ -1,11 +1,12 @@
 import com.ry.etterna.EtternaFile;
 import com.ry.etterna.note.EtternaNoteInfo;
 import com.ry.osu.builderRedone.TemplateFile;
-import com.ry.osu.builderRedone.TimingInfo;
+import com.ry.osu.builderRedone.util.TimingInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.stream.IntStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Java class created on 23/06/2022 for usage in project My-Stuff.
@@ -24,16 +25,16 @@ public class TestTimingPoint {
             for (EtternaNoteInfo info : ef.getNoteInfo()) {
                 info.timeNotesWith(ef.getTimingInfo());
 
-                TimingInfo ti = TimingInfo.loadFromEtternaInfo(info, (builder, bpm) -> builder.build(), ((builder, note, row) -> builder.build()));
+                TimingInfo ti = TimingInfo.loadFromEtternaInfo(info, builder -> builder, builder -> builder);
+
                 String s = TemplateFile.builder()
                         .setHitObjects(ti.getHitObjects())
                         .setTimingPoints(ti.getTimingPoints())
                         .build()
                         .compile();
 
-                System.out.println(s);
-                IntStream.range(0, 120).forEach(x -> System.out.print(">"));
-                System.out.println();
+                Files.writeString(Path.of("C:\\Users\\-Ry\\Desktop\\Test out\\test.osu"), s);
+
             }
         } catch (IOException e) {
             e.printStackTrace();
