@@ -30,6 +30,11 @@ import java.util.regex.Pattern;
 public final class StringUtils {
 
     /**
+     * Constant representing an empty string.
+     */
+    public static final String EMPTY_STRING = "";
+
+    /**
      * Regular expression which will match any non-ascii character.
      */
     public static final Pattern ASCII_REGEX = Pattern.compile("[^\\p{ASCII}]+");

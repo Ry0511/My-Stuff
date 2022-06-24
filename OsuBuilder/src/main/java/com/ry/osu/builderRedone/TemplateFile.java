@@ -1,5 +1,6 @@
 package com.ry.osu.builderRedone;
 
+import com.ry.osu.builderRedone.util.TimingInfo;
 import com.ry.useful.StringUtils;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -13,11 +14,11 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
+import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -73,6 +74,32 @@ public class TemplateFile {
     @Singular("setElement")
     @Getter(AccessLevel.PRIVATE)
     private final Map<Element, String> changeMap;
+
+    /**
+     * Constructs the template file from the base map.
+     * @param map The base element map.
+     */
+    private TemplateFile(final Map<Element, String> map) {
+        for (final Element e : Element.values()) {
+            map.putIfAbsent(e, StringUtils.EMPTY_STRING);
+        }
+        this.changeMap = map;
+    }
+
+    /**
+     * Constructs a template file.
+     *
+     * @param info The note information and timing information.
+     * @param finaliser The action performed on the builder before building.
+     * @return Built, builder.
+     */
+    public static TemplateFile from(final TimingInfo info,
+                                    final UnaryOperator<TemplateFileBuilder> finaliser) {
+        return finaliser.apply(builder()
+                .setHitObjects(info.getHitObjects())
+                .setTimingPoints(info.getTimingPoints()))
+                .build();
+    }
 
     /**
      * Gets the mapped element value.
