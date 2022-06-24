@@ -9,7 +9,8 @@ import java.io.File;
 import java.lang.reflect.MalformedParametersException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +28,16 @@ import java.util.regex.Pattern;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class StringUtils {
+
+    /**
+     * Constant representing an empty string.
+     */
+    public static final String EMPTY_STRING = "";
+
+    /**
+     * Regular expression which will match any non-ascii character.
+     */
+    public static final Pattern ASCII_REGEX = Pattern.compile("[^\\p{ASCII}]+");
 
     /**
      * Collects the first match found for the provided matcher.
@@ -268,11 +279,15 @@ public final class StringUtils {
         return sj.toString();
     }
 
+    /**
+     * Converts an input string to its ASCII representation.
+     *
+     * @param str The string to normalise.
+     * @return Normalised string.
+     */
     public static String toAscii(final String str) {
-        return new String(
-                str.getBytes(StandardCharsets.US_ASCII),
-                StandardCharsets.US_ASCII
-        );
+        return Normalizer.normalize(str, Normalizer.Form.NFD)
+                .replaceAll(ASCII_REGEX.pattern(), "");
     }
 
     /**
