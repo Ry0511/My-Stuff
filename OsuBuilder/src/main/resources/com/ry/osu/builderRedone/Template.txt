@@ -1,8 +1,8 @@
-osu file format v11
+osu file format v14
 
 ///////////////////////////////////////////////////////////////////////////////
 // AUTO GENERATED FILE FROM OSU!BUILDER MODULE.
-// Version: 1.2
+// Version: 1.3
 ///////////////////////////////////////////////////////////////////////////////
 
 [General]
@@ -34,12 +34,12 @@ Source:___SOURCE
 Tags:___TAGS
 
 [Difficulty]
-HPDrainRate: ___HP_DRAIN
-CircleSize: 4
-OverallDifficulty: ___OVERALL_DIFFICULTY
-ApproachRate: 9
-SliderMultiplier: 1.4
-SliderTickRate: 1
+HPDrainRate:___HP_DRAIN
+CircleSize:4
+OverallDifficulty:___OVERALL_DIFFICULTY
+ApproachRate:9
+SliderMultiplier:1.4
+SliderTickRate:1
 
 [Events]
 // Background and Video events

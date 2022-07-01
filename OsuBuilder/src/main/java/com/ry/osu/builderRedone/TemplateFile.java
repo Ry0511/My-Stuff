@@ -14,6 +14,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -80,10 +81,12 @@ public class TemplateFile {
      * @param map The base element map.
      */
     private TemplateFile(final Map<Element, String> map) {
-        for (final Element e : Element.values()) {
-            map.putIfAbsent(e, StringUtils.EMPTY_STRING);
-        }
-        this.changeMap = map;
+        // Provided map may be immutable/unmodifiable
+        final HashMap<Element, String> newMap = new HashMap<>(map.size());
+        newMap.putAll(map);
+        Arrays.stream(Element.values())
+                .forEach(x -> newMap.putIfAbsent(x, x.getDefaultValue()));
+        this.changeMap = newMap;
     }
 
     /**
@@ -144,26 +147,29 @@ public class TemplateFile {
      * file.
      */
     public static enum Element {
-        AUDIO_FILE_NAME("___AUDIO_FILE_NAME"),
-        TITLE("___TITLE"),
-        TITLE_UNICODE("___TITLE_UNICODE"),
-        ARTIST("___ARTIST"),
-        ARTIST_UNICODE("___ARTIST_UNICODE"),
-        CREATOR("___CREATOR"),
-        VERSION("___VERSION"),
-        SOURCE("___SOURCE"),
-        TAGS("___TAGS"),
-        HP_DRAIN("___HP_DRAIN"),
-        OVERALL_DIFFICULTY("___OVERALL_DIFFICULTY"),
-        BACKGROUND_FILE("___BACKGROUND_FILE"),
-        TIMING_POINTS("___TIMING_POINTS"),
-        HIT_OBJECTS("___HIT_OBJECTS");
+        AUDIO_FILE_NAME("___AUDIO_FILE_NAME", ""),
+        TITLE("___TITLE", "Unknown Title"),
+        TITLE_UNICODE("___TITLE_UNICODE", "Unknown Title"),
+        ARTIST("___ARTIST", "Unknown Artist"),
+        ARTIST_UNICODE("___ARTIST_UNICODE", "Unknown Artist"),
+        CREATOR("___CREATOR", "Overcomplicated Conversion Tool"),
+        VERSION("___VERSION", "Unknown Version"),
+        SOURCE("___SOURCE", "Unknown Source"),
+        TAGS("___TAGS", ""),
+        HP_DRAIN("___HP_DRAIN", "8"),
+        OVERALL_DIFFICULTY("___OVERALL_DIFFICULTY", "8"),
+        BACKGROUND_FILE("___BACKGROUND_FILE", ""),
+        TIMING_POINTS("___TIMING_POINTS", ""),
+        HIT_OBJECTS("___HIT_OBJECTS", "");
 
         @Getter
         private final String name;
+        @Getter
+        private final String defaultValue;
 
-        Element(final String s) {
+        Element(final String s, final String defaultValue) {
             name = Pattern.quote(s);
+            this.defaultValue = defaultValue;
         }
     }
 
