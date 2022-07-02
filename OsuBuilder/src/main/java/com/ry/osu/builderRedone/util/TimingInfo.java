@@ -97,7 +97,7 @@ public class TimingInfo {
                                 .setStartTime(note.getStartTime(), true)
                                 .setX(note.getColumn(), row.size())
                                 .setY(0)
-                                .setType(note.getEndTime() != null ? HitType.MANIA_HOLD : HitType.HIT)
+                                .setType(note.getStartNote().isHoldHead() ? HitType.MANIA_HOLD : HitType.HIT)
                                 .setEndTime(note.getEndTime(), true)
                                 .setHitSound(HitSound.HIT)
                                 .setArgs(HitObject.ObjectArgs.builder().initAuto().build())

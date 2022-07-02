@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Java class created on 08/04/2022 for usage in project FunctionalUtils.
@@ -120,6 +121,15 @@ public class NoteRow extends Row<Note> implements Iterable<Note> {
                         ? note
                         : empty));
 
-        return NOTE_MAPPING.get(sb.toString());
+        final Integer v = NOTE_MAPPING.get(sb.toString());
+
+        if (v == null) {
+            throw new RuntimeException(String.format(
+                    "Note pattern '%s' doesn't match any used by MinaCalc.",
+                    sb.toString()
+            ));
+        } else {
+            return v;
+        }
     }
 }

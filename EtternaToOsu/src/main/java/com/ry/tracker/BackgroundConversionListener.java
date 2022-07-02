@@ -10,6 +10,7 @@ import java.io.File;
  * @author -Ry
  */
 public interface BackgroundConversionListener {
+    void onSubmitted();
     void onMalformed(MSDChart chart, int exit, String[] ffmpegCommand);
     void onComplete(MSDChart chart, String backgroundFile, File outputFile);
 }

@@ -12,6 +12,8 @@ import com.ry.etterna.util.MinaCalculated;
 import com.ry.ffmpeg.AsyncFFMPEG;
 import com.ry.ffmpeg.FFMPEGUtils;
 import com.ry.ffmpeg.IOCommand;
+import com.ry.tracker.AudioConversionListener;
+import com.ry.tracker.BackgroundConversionListener;
 import com.ry.tracker.CompletionSwitch;
 import com.ry.tracker.SimpleConversionTracker;
 import lombok.AccessLevel;
@@ -34,7 +36,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -46,6 +47,8 @@ import java.util.stream.Stream;
 @CommonsLog
 @Getter(AccessLevel.PRIVATE)
 public class OsuConverterImpl implements OsuConverter {
+
+    //todo Perhaps an overhaul of the event listening/logging since its a disaster atm lol.
 
     private static final String BASE_RATE_AUDIO = "1.00-Audio.mp4";
 
@@ -321,6 +324,7 @@ public class OsuConverterImpl implements OsuConverter {
             });
 
             // EXEC ON DIFFERENT THREAD
+            getTracker().forEachAudioListener(AudioConversionListener::onSubmitted);
             withAudioList(xs -> xs.add(baseAudioService.exec(cmd, log::error)));
 
             // Queues the submission of rates to the rated audio service.
@@ -355,7 +359,10 @@ public class OsuConverterImpl implements OsuConverter {
 
             // SUBMISSION ON CALLER THREAD (EXECUTION ON DIFFERENT THREAD)
             cSwitch.runOnComplete(() -> {
-                withAudioList(xs -> xs.add(ratedAudioService.exec(cmd, log::error)));
+                withAudioList(xs -> {
+                    getTracker().forEachAudioListener(AudioConversionListener::onSubmitted);
+                    xs.add(ratedAudioService.exec(cmd, log::error));
+                });
             });
         }
 
@@ -403,6 +410,7 @@ public class OsuConverterImpl implements OsuConverter {
                         chart, finalExit, cmd.build("ffmpeg")
                 ));
             } else {
+                getTracker().forEachBackgroundListener(BackgroundConversionListener::onSubmitted);
                 getTracker().forEachBackgroundListener(xs -> xs.onComplete(
                         chart, backgroundFile, outputFile
                 ));

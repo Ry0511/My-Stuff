@@ -9,7 +9,9 @@ import com.ry.etterna.note.EtternaNoteInfo;
 import com.ry.etterna.util.MSDChart;
 import com.ry.ffmpeg.FFMPEG;
 import com.ry.ffmpeg.FFMPEGUtils;
+import com.ry.osu.builderRedone.sound.HitSound;
 import com.ry.osu.builderRedone.sound.HitType;
+import com.ry.osu.builderRedone.sound.SampleSet;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -26,7 +28,6 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -38,6 +39,8 @@ import java.util.stream.Stream;
 @Value
 @Builder
 public class ConversionConfig implements CFGOperations {
+
+    // todo long notes are not being converted correctly
 
     private static final double VERSION = 1.1D;
     private static final MathContext C = MathContext.DECIMAL64;
@@ -65,13 +68,18 @@ public class ConversionConfig implements CFGOperations {
 
     @Builder.Default
     @CLI(value = {"--max-rate-msd"}, mappingFunction = "mapToBigDecimal")
-    @Desc("The maximum rated MSD value; Default is 38")
+    @Desc(value = "The maximum rated MSD value; Default is 38", insertNewLine = true)
     BigDecimal maxRateMsd = new BigDecimal("38");
 
     @Builder.Default
     @CLI(value = {"--enable-log", "--el"}, mappingFunction = "mapToBoolean")
-    @Desc("If enabled then [AUDIO] or [BACKGROUND] messages are pinged to the standard output; Default is false")
-    boolean isLogEnabled = false;
+    @Desc("States if standard output messages should be sent; Default is true.")
+    boolean isLogEnabled = true;
+
+    @Builder.Default
+    @CLI(value = {"--log-mode", "--lm"}, mappingFunction = "mapToInt")
+    @Desc(value = "The logging mode used. 0, or 1; Default is 0 logging only stats; 1 Logs a lot more than that", insertNewLine = true)
+    int logMode = 0;
 
     @Builder.Default
     @CLI(value = {"--od", "--overall-difficulty"}, mappingFunction = "mapToFloat0To10")
@@ -84,9 +92,24 @@ public class ConversionConfig implements CFGOperations {
     float healthDrain = 8F;
 
     @Builder.Default
-    @CLI(value = {"--max-ln-length", "--max-ln", "--max-hold"}, mappingFunction = "mapToBigDecimal")
-    @Desc("The maximum length of any Hold note in milliseconds; Default is null (any-length is allowed)")
-    BigDecimal maxLongNoteLength = null;
+    @CLI(value = {"--tp-vol"}, mappingFunction = "mapToInt")
+    @Desc("The volume for all timing points; Default is 100")
+    int timingPointVolume = 100;
+
+    @Builder.Default
+    @CLI(value = {"--tp-ss", "--tp-sample-set"}, mappingFunction = "mapToInt")
+    @Desc("The sample set for all timing points; Default is 3; Options are Auto:0, Normal:1, Soft:2, Drum:3")
+    int sampleSet = SampleSet.DRUM.getId();
+
+    @Builder.Default
+    @CLI(value = {"--tp-si", "--tp-sample-index"}, mappingFunction = "mapToInt")
+    @Desc("The sample index for all timing points; Default is 0; Options are Hit:0, Whistle:2, Finish:4, Clap:8")
+    int sampleIndex = HitSound.HIT.getId();
+
+    @Builder.Default
+    @CLI(value = {"--min-ln-length", "--min-ln", "--min-hold"}, mappingFunction = "mapToBigDecimal")
+    @Desc(value = "The minimum length of any Hold note in milliseconds; Default is null (any-length is allowed)", insertNewLine = true)
+    BigDecimal minLongNoteLength = null;
 
     @Builder.Default
     @CLI(value = {"--use-cache"}, mappingFunction = "mapToBoolean")
@@ -105,7 +128,7 @@ public class ConversionConfig implements CFGOperations {
 
     @Builder.Default
     @CLI(value = {"--ffmpeg-path", "--ffmpeg"}, mappingFunction = "mapToPath")
-    @Desc("The path to some ffmpeg executable; default is null, meaning it will attempt to find Path ffmpeg or Working Directory ffmpeg.")
+    @Desc(value = "The path to some ffmpeg executable; default is null, meaning it will attempt to find Path ffmpeg or Working Directory ffmpeg.", insertNewLine = true)
     String ffmpegPath = null;
 
     @Builder.Default
@@ -232,18 +255,21 @@ public class ConversionConfig implements CFGOperations {
                         .setHpDrain(getHealthDrain()),
 
                 // Excess timing points should be inherited
-                x -> x,
+                x -> x.setVolume(getTimingPointVolume())
+                        // This doesn't allow mixing of the values unfortunately, but eh.
+                        .setSampleSetInt(getSampleSet())
+                        .setSampleIndexInt(getSampleIndex()),
 
                 // Optional HitObject mutations
                 x -> {
-                    if ((getMaxLongNoteLength() == null)
+                    if ((this.getMinLongNoteLength() == null)
                             || (x.getEndTime() == null)
                             || (x.getType() != HitType.MANIA_HOLD)) {
                         return x;
                     }
                     // Clamp short holds to single tap notes
-                    final var diff = x.getEndTime().subtract(x.getEndTime(), MathContext.DECIMAL64);
-                    if (diff.compareTo(getMaxLongNoteLength()) <= 0) {
+                    final var diff = x.getEndTime().subtract(x.getEndTime(), MathContext.DECIMAL64).abs();
+                    if (diff.compareTo(this.getMinLongNoteLength()) <= 0) {
                         return x.setType(HitType.HIT);
                     } else {
                         return x;
@@ -256,6 +282,11 @@ public class ConversionConfig implements CFGOperations {
         // todo this might be wrong...
         final BigDecimal base = baseMsd.getSkill(SkillSet.OVERALL);
         final BigDecimal rated = ratedMsd.getMsd().getSkill(SkillSet.OVERALL);
+
+        // MinaCalc on junk files produces 0.0 so any files whose MSD is not > 1 are ignored.
+        if (rated.compareTo(new BigDecimal("1.0")) <= 0) {
+            return false;
+        }
 
         // abs (B - R) <= K
         if (base.subtract(rated, C).abs().compareTo(getMaxMsdDeviation()) >= 0) {
@@ -336,14 +367,23 @@ public class ConversionConfig implements CFGOperations {
                         cli.isRequired(),
                         desc.value()
                 ));
+
+                if (desc.insertNewLine()) {
+                    sj.add("");
+                }
             }
         }
 
         sj.add("")
+                .add("Not all options apply appropriate sanity checks and thus "
+                        + "on bad input data can raise unchecked exceptions or "
+                        + "create unusable files.")
+                .add("")
                 .add("If both '--use-cache' and '--use-calculated' are set then a mixture "
                         + "of the two are used; Firstly, cached is assessed and then its "
                         + "calculated iff the MSD is not found in the cache.")
-                .add("-Ry :: -Ry#5879; Go fuck yourself :)");
+                .add("")
+                .add("-Ry :: -Ry#5879");
         return sj.toString();
     }
 
@@ -467,6 +507,14 @@ public class ConversionConfig implements CFGOperations {
 
             } catch (final Exception ex) {
                 throw new Err("Argument '%s' could not be loaded into integer for reason '%s'", arg, ex.getMessage());
+            }
+        }
+
+        private static int mapToInt(final String arg) {
+            try {
+                return Integer.parseInt(arg);
+            } catch (final Exception ex) {
+                throw new Err("Argument '%s' isn't a valid number. More info: '%s'", ex.getMessage());
             }
         }
     }

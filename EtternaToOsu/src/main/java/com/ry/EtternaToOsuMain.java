@@ -7,8 +7,15 @@ import com.ry.converter.OsuConverterImpl;
 import com.ry.ffmpeg.AsyncFFMPEG;
 import com.ry.ffmpeg.FFMPEG;
 import com.ry.tracker.LoggingListener;
+import lombok.SneakyThrows;
+import lombok.Synchronized;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 
 /**
@@ -69,10 +76,15 @@ public class EtternaToOsuMain {
                 rateService
         );
 
+        final Runnable waitAction;
         if (cfg.isLogEnabled()) {
             final LoggingListener ls = new LoggingListener();
+            ls.setMode(cfg.getLogMode());
             impl.getTracker().addBackgroundListener(ls);
             impl.getTracker().addAudioConversionListener(ls);
+            waitAction = ls::printState;
+        } else {
+            waitAction = () -> {};
         }
 
         final OsuConverterHandler<OsuConverterImpl> handle = new OsuConverterHandler<>(impl);
@@ -81,15 +93,12 @@ public class EtternaToOsuMain {
             handle.convert(input, output);
 
             // Wait for termination
-            baseService.terminateAndWait(() -> {});
-            System.out.println(
-                    "[INFO] Base 1.0 audio conversions are complete;"
-                    + " Now awaiting the rates."
-            );
-            rateService.terminateAndWait(() -> {});
-            System.out.println("[INFO] Rated audio files complete.");
+            baseService.terminateAndWait(waitAction);
+            rateService.terminateAndWait(waitAction);
         } catch (final Exception e) {
             throw new Error(e);
         }
+
+        System.out.println("[INFO] Exiting...");
     }
 }
