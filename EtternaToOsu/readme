@@ -1,0 +1,12 @@
+### Code Notes
+I don't particularly like this implementation for the conversion. There are a
+lot of oversights that could have been predicted/seen but I kinda got burnt out
+writing the code and just wanted it done so I can start on something else.
+
+I may at some point come back to this and properly implement it but right now
+all it needs to do is what it is doing.
+
+## Info
+The conversion config is dynamic, in that, fields are auto loaded from the
+command line, though a very hacky solution was taken just to get a simple
+implementation.

@@ -42,8 +42,6 @@ import java.util.stream.Stream;
 @Builder
 public class ConversionConfig implements CFGOperations {
 
-    // todo long notes are not being converted correctly
-
     private static final double VERSION = 1.1D;
     private static final MathContext C = MathContext.DECIMAL64;
     private static final int TOTAL_THREADS = Runtime.getRuntime().availableProcessors();
@@ -288,7 +286,6 @@ public class ConversionConfig implements CFGOperations {
     }
 
     private boolean msdFilter(final MSD baseMsd, final MSDChart ratedMsd) {
-        // todo this might be wrong...
         final BigDecimal base = baseMsd.getSkill(SkillSet.OVERALL);
         final BigDecimal rated = ratedMsd.getMsd().getSkill(SkillSet.OVERALL);
 
