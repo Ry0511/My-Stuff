@@ -19,9 +19,12 @@ import java.util.stream.Stream;
 @Data
 public class LoggingListener implements AudioConversionListener, BackgroundConversionListener {
 
+    private static final int GC_TICKER = 100;
+
     private int mode = 0;
     private Instant start = Instant.now();
     private AtomicInteger total = new AtomicInteger();
+    private AtomicInteger gcTicker = new AtomicInteger();
     private int totalComplete = 0;
     private int totalMalformed = 0;
     private HashSet<String> malformedSet = new HashSet<>();
@@ -111,6 +114,11 @@ public class LoggingListener implements AudioConversionListener, BackgroundConve
 
     private synchronized void runAsync(final Runnable action) {
         action.run();
+        // Every 100 calls attempt to garbage collect.
+        if (gcTicker.getAndIncrement() >= GC_TICKER) {
+            gcTicker.getAndSet(0);
+            System.gc();
+        }
     }
 
     public void printState() {
