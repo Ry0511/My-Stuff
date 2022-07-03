@@ -4,6 +4,10 @@ import com.ry.etterna.note.EtternaNoteInfo;
 import com.ry.vsrg.sequence.TimingSequence;
 import lombok.Value;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,16 +34,61 @@ public final class MinaCalc {
 
     private static final String LIB_NAME = "MinaCalc_Native_FNUtils.dll";
 
-    // Loads the MinaDll file.
     static {
+        init();
+    }
+
+    // Loads the MinaDll file.
+    private static void init() {
         final URL url = MinaCalc.class.getResource(LIB_NAME);
 
         if (url != null) {
-            System.load(url.getPath());
+            try {
+                System.load(url.getPath());
+
+                // If it can't load the library then we're likely in a JAR,
+                // so we need to extract the native binding library to a file
+                // that can be loaded.
+            } catch (final UnsatisfiedLinkError err) {
+                final File output = new File(System.getProperty("user.dir") + "/MinaCalcNative.dll");
+
+                // The ultra omega try block
+                try {
+                    if (!output.isFile() && output.createNewFile()) {
+                        try (final FileOutputStream fos = new FileOutputStream(output)) {
+                            try (final InputStream is = url.openStream()) {
+                                is.transferTo(fos);
+                            }
+                        }
+                    }
+                    System.load(output.getAbsolutePath());
+
+                    // Creating the output file failed
+                } catch (final IOException ex) {
+                    throw new Error("Failed to create native file: "
+                            + output
+                            + "; More info: "
+                            + ex.getMessage());
+
+                    // This is very unlikely, but in the case the loaded one
+                    // becomes invalid then we delete and retry.
+                } catch (final UnsatisfiedLinkError ex) {
+                    if (!output.delete()) {
+                        throw new Error("Couldn't delete old native file: " + output);
+                    }
+                    init();
+                }
+            }
+
+            // No MinaCalc.dll to load
         } else {
-            throw new IllegalStateException("Failed to load MinaCalc native bindings...");
+            throw new Error("Failed to load MinaCalc native bindings...");
         }
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Native class calls.
+    ///////////////////////////////////////////////////////////////////////////
 
     /**
      * The default score goal used for MSD.
@@ -117,7 +166,7 @@ public final class MinaCalc {
 
                 if (n != 0) {
                     notes.add(n);
-                    times.add(seq.getCurTimeScaled().floatValue());
+                    times.add(seq.getCurTimeScaledFloat().floatValue());
                 }
 
                 seq.advanceByNote(m.size(), r.getBpm().getValue());

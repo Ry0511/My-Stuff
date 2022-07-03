@@ -92,13 +92,13 @@ public class CalculatedNoteInfo implements MinaCalculated {
     @Override
     public Stream<MSDChart> streamRateInRange(final BigDecimal min, final BigDecimal max) {
 
-        if (min.compareTo(new BigDecimal("0.7")) < 0) {
-            throw new IllegalStateException("Rate " + min + " unsupported.");
-        }
-
-        if (max.compareTo(new BigDecimal("2.0")) > 0) {
-            throw new IllegalStateException("Rate " + max + " unsupported.");
-        }
+//        if (min.compareTo(new BigDecimal("0.7")) < 0) {
+//            throw new IllegalStateException("Rate " + min + " unsupported.");
+//        }
+//
+//        if (max.compareTo(new BigDecimal("2.0")) > 0) {
+//            throw new IllegalStateException("Rate " + max + " unsupported.");
+//        }
 
         return StreamUtils.createStreamLazily(supplyInfoInRange(min, max));
     }

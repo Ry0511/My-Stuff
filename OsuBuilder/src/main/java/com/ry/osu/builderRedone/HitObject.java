@@ -5,12 +5,16 @@ import com.ry.osu.builderRedone.sound.HitType;
 import com.ry.osu.builderRedone.sound.SampleSet;
 import com.ry.osu.builderRedone.sound.Volume;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * Java class created on 23/06/2022 for usage in project My-Stuff.
@@ -80,6 +84,7 @@ public class HitObject {
 
         /**
          * Sets the X position of this hit object as if it were a Mania note.
+         *
          * @param col Column (0 -> k).
          * @param columns The number of columns available.
          * @return The builder.
@@ -99,6 +104,10 @@ public class HitObject {
 
             if (type == HitType.MANIA_HOLD) {
                 setY(MANIA_HOLD_Y);
+            }
+
+            if (type == HitType.HIT) {
+                setY(0);
             }
 
             return this;
@@ -146,6 +155,38 @@ public class HitObject {
             }
 
             return this;
+        }
+
+        public HitObjectBuilder runIf(Predicate<HitObjectBuilder> predicate,
+                                      Runnable action) {
+            if (predicate.test(this)) {
+                action.run();
+            }
+            return this;
+        }
+
+        public int getX() {
+            return this.x;
+        }
+
+        public int getY() {
+            return this.y;
+        }
+
+        public BigDecimal getStartTime() {
+            return this.startTime;
+        }
+
+        public BigDecimal getEndTime() {
+            return this.endTime;
+        }
+
+        public HitType getType() {
+            return this.type;
+        }
+
+        public ObjectArgs getArgs() {
+            return this.args;
         }
     }
 

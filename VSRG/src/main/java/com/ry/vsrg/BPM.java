@@ -72,6 +72,6 @@ public class BPM extends TimedElement<BigDecimal> {
      * @return True if the value of this BPM is the same as the provided.
      */
     public boolean looselyEqual(final BPM other) {
-        return other != null && getValue().equals(other.getValue());
+        return other != null && getValue().compareTo(other.getValue()) == 0;
     }
 }

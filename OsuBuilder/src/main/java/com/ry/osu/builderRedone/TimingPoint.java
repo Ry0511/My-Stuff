@@ -123,6 +123,16 @@ public class TimingPoint {
             return this;
         }
 
+        public TimingPointBuilder setSampleSetInt(final int ss) {
+            this.sampleSet = SampleSet.from(ss);
+            return this;
+        }
+
+        public TimingPointBuilder setSampleIndexInt(final int si) {
+            this.sampleIndex = HitSound.from(si);
+            return this;
+        }
+
         /**
          * Initialises the default volume, sample set, hit sound, and marks this
          * as an un-inherited timing point.

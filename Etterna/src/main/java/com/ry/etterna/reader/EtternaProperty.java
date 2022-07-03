@@ -55,7 +55,7 @@ public enum EtternaProperty {
                     .mutateValueIf(vs -> vs.size() > 4, vs -> {
                         vs.removeLast();
                         return vs;
-                    }).mutateType(vs -> vs.toArray(new String[0]))
+                    }).mutateType(vs -> vs.toArray(String[]::new))
                     .getValue(),
             String[].class
     );
