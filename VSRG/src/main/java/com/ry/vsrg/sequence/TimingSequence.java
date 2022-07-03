@@ -14,7 +14,8 @@ import java.math.RoundingMode;
 @Getter
 public class TimingSequence {
 
-    // todo The timings for this don't work correctly
+    // todo Scaling the output values to 3DP can result in error especially
+    //  if the chart has a very large BPM at some points.
 
     /**
      * Time signatures used by ArrowVortex and Etterna, this is primarily used
@@ -154,6 +155,10 @@ public class TimingSequence {
         final int defaultScale = 3;
 
         return curTime.setScale(defaultScale, RoundingMode.FLOOR);
+    }
+
+    public BigDecimal getCurTimeScaledFloat() {
+        return curTime.setScale(7, RoundingMode.FLOOR);
     }
 
     /**

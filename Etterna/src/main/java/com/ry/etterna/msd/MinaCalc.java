@@ -166,7 +166,7 @@ public final class MinaCalc {
 
                 if (n != 0) {
                     notes.add(n);
-                    times.add(seq.getCurTimeScaled().floatValue());
+                    times.add(seq.getCurTimeScaledFloat().floatValue());
                 }
 
                 seq.advanceByNote(m.size(), r.getBpm().getValue());

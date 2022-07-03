@@ -18,10 +18,12 @@ import lombok.SneakyThrows;
 import lombok.Value;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Optional;
@@ -68,8 +70,8 @@ public class ConversionConfig implements CFGOperations {
 
     @Builder.Default
     @CLI(value = {"--max-rate-msd"}, mappingFunction = "mapToBigDecimal")
-    @Desc(value = "The maximum rated MSD value; Default is 38", insertNewLine = true)
-    BigDecimal maxRateMsd = new BigDecimal("38");
+    @Desc(value = "The maximum rated MSD value; Default is 36.5", insertNewLine = true)
+    BigDecimal maxRateMsd = new BigDecimal("36.5");
 
     @Builder.Default
     @CLI(value = {"--enable-log", "--el"}, mappingFunction = "mapToBoolean")
@@ -78,8 +80,15 @@ public class ConversionConfig implements CFGOperations {
 
     @Builder.Default
     @CLI(value = {"--log-mode", "--lm"}, mappingFunction = "mapToInt")
-    @Desc(value = "The logging mode used. 0, or 1; Default is 0 logging only stats; 1 Logs a lot more than that", insertNewLine = true)
+    @Desc("The logging mode used. 0, or 1; Default is 0 logging only stats; 1 Logs a lot more than that")
     int logMode = 0;
+
+    @Builder.Default
+    @CLI(value = {"--is-dump-junk"}, mappingFunction = "mapToBoolean")
+    @Desc(value = "If enabled when, if ever, the Internal MinaCalc produces "
+            + "'skipping junk file' then said files timing info will be dumped "
+            + "to a file for debugging purposes.", insertNewLine = true)
+    boolean isDumpJunkFiles = false;
 
     @Builder.Default
     @CLI(value = {"--od", "--overall-difficulty"}, mappingFunction = "mapToFloat0To10")
@@ -268,7 +277,7 @@ public class ConversionConfig implements CFGOperations {
                         return x;
                     }
                     // Clamp short holds to single tap notes
-                    final var diff = x.getEndTime().subtract(x.getEndTime(), MathContext.DECIMAL64).abs();
+                    final var diff = x.getEndTime().subtract(x.getStartTime(), MathContext.DECIMAL64);
                     if (diff.compareTo(this.getMinLongNoteLength()) <= 0) {
                         return x.setType(HitType.HIT);
                     } else {
@@ -284,7 +293,36 @@ public class ConversionConfig implements CFGOperations {
         final BigDecimal rated = ratedMsd.getMsd().getSkill(SkillSet.OVERALL);
 
         // MinaCalc on junk files produces 0.0 so any files whose MSD is not > 1 are ignored.
-        if (rated.compareTo(new BigDecimal("1.0")) <= 0) {
+        if (base.compareTo(new BigDecimal("1.0")) <= 0) {
+            if (isDumpJunkFiles()) {
+                final File tmp = new File(System.getProperty("user.dir")
+                        + "/junk-files/"
+                        + ratedMsd.getEtternaFile().getSmFile().getName()
+                        + "-" + ratedMsd.getRate()
+                        + ".txt"
+                );
+
+                // Should provide enough information
+                final StringJoiner sj = new StringJoiner(System.lineSeparator());
+                sj.add("[READER INFO]");
+                sj.add(ratedMsd.getEtternaFile().getReader().toString());
+                sj.add("").add("[ETTERNA FILE INFO]");
+                sj.add(ratedMsd.getEtternaFile().toString());
+                sj.add("").add("[SUBJECT NOTE INFO]");
+                sj.add(ratedMsd.getInfo().toString());
+                sj.add("").add("[TIMED NOTES]");
+                sj.add(ratedMsd.getInfo().debugStr());
+
+                try {
+                    Files.writeString(tmp.toPath(), sj.toString());
+                } catch (final IOException e) {
+                    System.out.println(
+                            "[ERROR] Failed to write junk-file debug log to: "
+                                    + tmp.getAbsolutePath()
+                                    + "; Error: " + e.getMessage()
+                    );
+                }
+            }
             return false;
         }
 

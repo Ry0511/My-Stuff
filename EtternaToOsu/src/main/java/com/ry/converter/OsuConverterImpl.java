@@ -3,6 +3,7 @@ package com.ry.converter;
 import com.ry.etterna.EtternaFile;
 import com.ry.etterna.db.CacheDB;
 import com.ry.etterna.msd.MSD;
+import com.ry.etterna.msd.SkillSet;
 import com.ry.etterna.note.EtternaNoteInfo;
 import com.ry.etterna.util.CachedNoteInfo;
 import com.ry.etterna.util.CalculatedNoteInfo;
@@ -23,6 +24,7 @@ import lombok.extern.apachecommons.CommonsLog;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -48,7 +50,8 @@ import java.util.stream.Stream;
 @Getter(AccessLevel.PRIVATE)
 public class OsuConverterImpl implements OsuConverter {
 
-    //todo Perhaps an overhaul of the event listening/logging since its a disaster atm lol.
+    //todo Perhaps an overhaul of the entire converter system. This works but
+    // I don't like how its implemented, since there was no real design/structure.
 
     private static final String BASE_RATE_AUDIO = "1.00-Audio.mp4";
 
@@ -123,7 +126,7 @@ public class OsuConverterImpl implements OsuConverter {
                 .filter(Objects::nonNull)
                 .filter(MSDChart::isMSDPresent)
                 // Is 1.0 or filter is true
-                .filter(y -> base.get().equals(y.getMsd()) || filter.test(base.get(), y))
+                .filter(y -> y.isBaseRate() || filter.test(base.get(), y))
         );
     }
 
