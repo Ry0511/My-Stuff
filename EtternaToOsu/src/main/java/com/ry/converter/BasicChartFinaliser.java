@@ -86,7 +86,7 @@ public class BasicChartFinaliser implements ChartFinaliser {
                 .add(chart.isBaseRate() ? "rate:no" : "rate:y:" + chart.getRate())
                 .add(eFile.getOffset().get().signum() == -1 ? "offset:negative" : "offset:positive")
                 // +1 since its 0 based
-                .add("diff:" + chart.getInfo().getDifficultyIndex() + 1)
+                .add("diff:" + (chart.getInfo().getDifficultyIndex() + 1))
                 .add(eFile.hasPackStructure() ? "pack:y:" + eFile.getPackFolder().getName() : "pack:no")
                 .add(chart.getMsd().getNotBestSkillTag())
                 .add(chart.getMsd().getMsdFilterTag("12", "40", "1"))
@@ -167,7 +167,7 @@ public class BasicChartFinaliser implements ChartFinaliser {
         final AtomicBoolean unInherited = new AtomicBoolean(true);
         return TimingInfo.loadFromEtternaInfo(
                 info,
-                x -> x.setUnInherited(unInherited.getAndSet(false)),
+                x -> finaliseTimingPoint.apply(x.setUnInherited(unInherited.getAndSet(false))),
                 finaliseHitObject
         );
     }
