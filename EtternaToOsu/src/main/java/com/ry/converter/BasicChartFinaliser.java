@@ -85,6 +85,8 @@ public class BasicChartFinaliser implements ChartFinaliser {
         final String tags = new TagsBuilder()
                 .add(chart.isBaseRate() ? "rate:no" : "rate:y:" + chart.getRate())
                 .add(eFile.getOffset().get().signum() == -1 ? "offset:negative" : "offset:positive")
+                // +1 since its 0 based
+                .add("diff:" + chart.getInfo().getDifficultyIndex() + 1)
                 .add(eFile.hasPackStructure() ? "pack:y:" + eFile.getPackFolder().getName() : "pack:no")
                 .add(chart.getMsd().getNotBestSkillTag())
                 .add(chart.getMsd().getMsdFilterTag("12", "40", "1"))
@@ -124,7 +126,7 @@ public class BasicChartFinaliser implements ChartFinaliser {
             return chart.getEtternaFile().getPackFolder().getName();
         } else {
             final var prop = chart.getEtternaFile().getProperty(EtternaProperty.TITLE);
-            if (prop.isEmpty()) {
+            if (prop.isEmpty() || prop.getProcessed().matches("\\s+")) {
                 return "__Title Missing";
             } else {
                 return prop.getProcessed();
