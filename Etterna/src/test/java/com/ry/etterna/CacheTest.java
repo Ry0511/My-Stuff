@@ -25,7 +25,6 @@ public class CacheTest {
     public static void main(String[] args) throws SQLException, IOException {
         final CacheDB db = new CacheDB(CACHE);
         final EtternaIterator iter = new EtternaIterator(SONGS_DIR);
-        iter.setFilter(EtternaFile::isStandard);
 
         iter.getEtternaStream()
                 .map(x -> CachedNoteInfo.from(x, db))

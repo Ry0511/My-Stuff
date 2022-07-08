@@ -117,4 +117,13 @@ public enum NoteType {
     public boolean isMine() {
         return this == MINE;
     }
+
+    /**
+     * @return {@code true} if this Note type is a MinaSD assessed note.
+     * @implSpec I am not sure if this is correct, however, I just re-used
+     * what is assessed for the Chart Key.
+     */
+    public boolean isMinaAssessedNote() {
+        return isTap() || this == HOLD_HEAD;
+    }
 }

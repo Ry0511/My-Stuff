@@ -3,6 +3,8 @@ package com.ry.etterna.note;
 import com.ry.etterna.EtternaFile;
 import com.ry.etterna.db.CacheDB;
 import com.ry.etterna.db.CacheStepsResult;
+import com.ry.etterna.msd.MSD;
+import com.ry.etterna.msd.MinaCalc;
 import com.ry.etterna.reader.EtternaTiming;
 import com.ry.useful.MessageBuilder;
 import com.ry.useful.MutatingValue;
@@ -18,10 +20,13 @@ import lombok.ToString;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -375,5 +380,59 @@ public class EtternaNoteInfo {
         }
 
         return count;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Used to calculate MSD in place for the current timing data.
+    ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @return MSD info for the default 1.0 Rate (1.0 is based on the current
+     * timing info)
+     * @throws IllegalStateException If the notes have not yet been timed with
+     *                               any timing data.
+     */
+    public MSD calcMSD() {
+        if (getCurTimingInfo() == null) throw new IllegalStateException();
+
+        final MinaCalc.RawNotes x = new MinaCalc.RawNotes(this);
+        return MSD.initFromFloats(MinaCalc.getDefaultMSDFor(
+                x.getNotes(),
+                x.getTimes()
+        ));
+    }
+
+    /**
+     * @param scoreGoal The score-goal to achieve.
+     * @param rate The desired MSD Rate.
+     * @return MSD info for the provided rate and score goal.
+     * @throws IllegalStateException If the notes have not yet been timed with
+     *                               any timing data.
+     */
+    public MSD calcMSD(final float scoreGoal, final float rate) {
+        if (getCurTimingInfo() == null) throw new IllegalStateException();
+
+        final MinaCalc.RawNotes x = new MinaCalc.RawNotes(this);
+        return MSD.initFromFloats(MinaCalc.getMSDForRateAndGoal(
+                x.getNotes(), x.getTimes(),
+                scoreGoal, rate
+        ));
+    }
+
+    /**
+     * Calculates the MSD for all rates 0.7 to 2.0 in increments of 0.1 using
+     * the default 0.93 score-goal.
+     *
+     * @return List of MSD Values.
+     */
+    public List<MSD> calcMSDForAllRates() {
+        if (getCurTimingInfo() == null) throw new IllegalStateException();
+
+        final MinaCalc.RawNotes x = new MinaCalc.RawNotes(this);
+        return MinaCalc.getMSDForAllRates(
+                        x.getNotes(), x.getTimes(), new ArrayList<>())
+                .stream()
+                .map(MSD::initFromFloats)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 }

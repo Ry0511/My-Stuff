@@ -8,6 +8,7 @@ import lombok.ToString;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -274,7 +275,17 @@ public class MSD {
         final BigDecimal increment = new BigDecimal(inc, MathContext.DECIMAL64);
         BigDecimal val = new BigDecimal(mi, MathContext.DECIMAL64);
 
+
         final StringJoiner sj = new StringJoiner(",");
+
+        // These should be at the front
+        if (overall == NAN) sj.add("MSD==NaN");
+        sj.add(getBestSkill().getAcronym() + "!");
+        sj.add("MSD>?");
+        // JS:20, CHJ:23, HS:26, etc
+        forEachSkill((s, v) -> sj.add(s.getAcronym() + ":" + v.toBigInteger().toString()));
+
+        // MSD>K ; MSD<K ; MSD==K
         while (val.compareTo(max) <= 0) {
 
             // 2.12345 -> 2.12; 2.001 -> 2
@@ -292,9 +303,6 @@ public class MSD {
             val = val.add(increment, MathContext.DECIMAL64);
         }
 
-        if (overall == NAN) sj.add("MSD==NaN");
-        sj.add(getBestSkill().getAcronym() + "!");
-        sj.add("MSD>?");
         return sj.toString();
     }
 
@@ -307,6 +315,18 @@ public class MSD {
                 + ": "
                 + skillToString(s))
         );
+
+        return sj.toString();
+    }
+
+    public String getNotBestSkillTag() {
+        final SkillSet best = getBestSkill();
+        final StringJoiner sj = new StringJoiner(",");
+
+        Arrays.stream(SkillSet.values())
+                .filter(x -> x != best)
+                .filter(x -> x != SkillSet.OVERALL)
+                .forEach(x -> sj.add("!" + x.getAcronym()));
 
         return sj.toString();
     }

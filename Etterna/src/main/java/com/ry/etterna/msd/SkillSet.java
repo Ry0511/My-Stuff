@@ -17,7 +17,7 @@ public enum SkillSet {
     HAND_STREAM("HS"),
     STAMINA("STAM"),
     JACKS("JA"),
-    CHORDS("CH"),
+    CHORDS("CHJ"),
     TECHNICAL("TECH");
 
     /**

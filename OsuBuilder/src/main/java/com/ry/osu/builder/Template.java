@@ -6,7 +6,10 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
+import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,6 +25,8 @@ public final class Template {
             "OsuBuilder/src/main/java/com/ry/osu/builder/Template.txt"
     );
 
+    private static final URL TEMPLATE_URL = Template.class.getResource("Template.txt");
+
     /**
      * Since strings are immutable we can store the full content in memory
      * and the just clone this one whenever a change is required.
@@ -30,10 +35,29 @@ public final class Template {
 
     static {
         try {
-            CONTENT = FileUtils.readFileToString(
-                    TEMPLATE,
-                    StandardCharsets.UTF_8
-            );
+
+            // Packaged to .jar (this should be the standard now)
+            if (TEMPLATE_URL != null) {
+                final StringJoiner sj = new StringJoiner(System.lineSeparator());
+                final Scanner sc = new Scanner(TEMPLATE_URL.openStream(), "UTF-8");
+
+                while (sc.hasNextLine()) {
+                    sj.add(sc.nextLine());
+                }
+                sc.close();
+                CONTENT = sj.toString();
+
+                // Open in IDE (Deprecated really)
+            } else {
+                CONTENT = FileUtils.readFileToString(
+                        TEMPLATE,
+                        StandardCharsets.UTF_8
+                );
+            }
+
+            if (TEMPLATE_URL == null && !TEMPLATE.isFile()) {
+                throw new IllegalStateException("Template Osu file could not be loaded...");
+            }
 
             // Shouldn't happen
         } catch (final IOException e) {

@@ -80,7 +80,7 @@ public final class BuildUtils {
      * @param r The row.
      * @return New timing point.
      */
-    private static TimingPoint bpmToTimingPoint(final NoteMeasure m,
+    public static TimingPoint bpmToTimingPoint(final NoteMeasure m,
                                                 final NoteRow r) {
         final BPM bpm = r.getBpm();
         final TimingPoint tp = new TimingPoint();
@@ -104,8 +104,8 @@ public final class BuildUtils {
      * @param numColumns The number of columns in a row.
      * @return New hit object instance.
      */
-    private static HitObject noteToHitObject(final Note note,
-                                             final int numColumns) {
+    public static HitObject noteToHitObject(final Note note,
+                                            final int numColumns) {
         final HitObject ho = new HitObject();
         final int holdYPos = 192;
 

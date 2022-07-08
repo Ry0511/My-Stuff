@@ -1,11 +1,6 @@
 package com.ry.ffmpeg;
 
-import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,19 +9,16 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Iterator;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.function.BiConsumer;
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
- * Java class created on 23/04/2022 for usage in project FunctionalUtils.
- * Utility class which will use the default {@link FFMPEG#INSTANCE} to execute
- * the subject commands.
+ * Java class created on 19/06/2022 for usage in project My-Stuff.
  *
  * @author -Ry
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor
 public final class FFMPEGUtils {
 
     /**
@@ -40,21 +32,75 @@ public final class FFMPEGUtils {
      */
     private static final BigDecimal MILLIS_FACTOR = new BigDecimal("1000");
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Command implementations
-    ///////////////////////////////////////////////////////////////////////////
+    /**
+     * Gets a ffmpeg instance from the users PATH.
+     *
+     * @return Empty optional if ffmpeg could not be found on their PATH. Else
+     * ffmpeg instance if it was detected.
+     * @implNote It is possible that a non-empty optional can be returned and
+     * ffmpeg is not present. This means that the user has some derivative of
+     * ffmpeg/bin but said folder doesn't contain an executable named
+     * ffmpeg.exe.
+     */
+    public static Optional<FFMPEG> getFfmpegFromPath() {
+        final Pattern rgx = Pattern.compile("(?i)(ffmpeg.bin)|(ffmpeg\\.exe)");
+
+        if (rgx.matcher(System.getenv("Path")).find()) {
+            return Optional.of(new FFMPEG("ffmpeg", false));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Gets a ffmpeg instance by finding any matching ffmpeg.exe from the root
+     * folder provided.
+     *
+     * @param root The folder check, any depth is checked.
+     * @return Empty optional in any malformed case or if ffmpeg.exe was not
+     * found. If ffmpeg.exe was found (case-insensitive) then a new FFMPEG
+     * instance with said file is returned.
+     */
+    public static Optional<FFMPEG> getFfmpegFromRoot(final File root) {
+        if (root.isFile() || !root.exists()) {
+            return Optional.empty();
+        }
+
+        try {
+            return Files.walk(root.toPath())
+                    .map(Path::toFile)
+                    .filter(File::isFile)
+                    .filter(x -> x.getName().equalsIgnoreCase("ffmpeg.exe"))
+                    .findAny()
+                    .map(x -> new FFMPEG(x.getAbsolutePath(), true));
+
+        } catch (final IOException ignored) {
+            // Ignore
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * @return Empty if ffmpeg could not be found in the working directory. Else
+     * a new instance.
+     * @see #getFfmpegFromRoot(File)
+     */
+    public static Optional<FFMPEG> getFfmpegFromWorkingDir() {
+        return getFfmpegFromRoot(new File(System.getProperty("user.dir")));
+    }
 
     /**
      * Creates a delayed audio command.
      *
-     * @param delay The delay to apply.
+     * @param delay The delay to apply is Seconds.
      * @param input The input file to delay.
      * @param output The output file to produce.
      * @return Array of FFMPEG CLI arguments.
      */
-    public static String[] delayAudio(final BigDecimal delay,
-                                      final String input,
-                                      final String output) {
+    public static IOCommand delayAudio(final BigDecimal delay,
+                                       final String input,
+                                       final String output) {
 
         // Positive Offset (Applies to 4 audio channels excess doesn't matter)
         if (delay.signum() > -1) {
@@ -64,64 +110,32 @@ public final class FFMPEGUtils {
             final String delayStr = String.format("%s|%s|%s|%s", s, s, s, s);
 
             // Convert audio
-            return CommandBuilder.builder()
-                    .add("-y", "-i", quote(input))
-                    .add("-af", quote("adelay=" + delayStr))
-                    .add("-map", "0:a")
-                    .add(quote(output))
+            return IOCommand.builder()
+                    .isQuotePaths(true)
+                    .addGlobalFlag("-y")
+                    .inputFile(input)
+                    .outputOptions(List.of(
+                            "-af",
+                            "\"adelay=" + delayStr + "\"",
+                            "-map",
+                            "0:a"))
+                    .outputFile(output)
                     .build();
 
             // Negative offset
         } else {
-            return CommandBuilder.builder()
-                    .add("-y", "-i", quote(input))
-                    .add("-ss", delay.negate().toPlainString())
-                    .add("-map", "0:a")
-                    .add(quote(output))
+            return IOCommand.builder()
+                    .isQuotePaths(true)
+                    .addGlobalFlag("-y")
+                    .inputFile(input)
+                    .outputOptions(List.of(
+                            "-ss",
+                            delay.negate().toPlainString(),
+                            "-map",
+                            "0:a"))
+                    .outputFile(output)
                     .build();
         }
-    }
-
-    /**
-     * Copies the input file to a temporary file and then compresses the clone
-     * over the original, that is, the input file is modified only in the
-     * underlying data.
-     *
-     * @param input The input file to compress.
-     * @return The executed process in its final state.
-     */
-    public static Process compressAudio(@NonNull final File input)
-            throws IOException, InterruptedException {
-        final String name = input.getName();
-        final String ext = name.substring(name.lastIndexOf("."));
-
-        final Path tmp = Files.createTempFile(
-                "Compress-Audio-Task",
-                ext
-        );
-        FileUtils.copyFile(input, tmp.toFile());
-
-        return FFMPEG.INSTANCE.execAndWait(CommandBuilder.builder().add(
-                        "-y", "-i", quote(tmp.toFile().getAbsolutePath()),
-                        "-preset", "veryslow", quote(input.getAbsolutePath())
-                ).build()
-        );
-    }
-
-    /**
-     * Async image compression, that is, the resulting input image is converted
-     * to '.jpg' using FFMPEG's default compression.
-     *
-     * @param input The input file to compress.
-     * @param output The output file to produce.
-     * @return Future representing the tasks current state.
-     */
-    public static Future<Process> compressImage(final String input,
-                                                final String output) {
-        return FFMPEG.INSTANCE.exec(CommandBuilder.builder().add(
-                        "-y", "-i", quote(input), quote(output + ".jpg")
-                ).build()
-        );
     }
 
     /**
@@ -129,78 +143,53 @@ public final class FFMPEGUtils {
      *
      * @param input The input file to rate
      * @param rate The desired audio rate Min: 0.5, Max: 2.0
-     * @param isNC Use Night core for the output rate.
+     * @param isNightcore Use Night core for the output rate.
      * @param output The output file destination.
      * @return Future representing this tasks state.
      * @implNote The NC mode, although works should still be tweaked.
      */
-    public static String[] rateAudio(final String input,
-                                     final String rate,
-                                     final boolean isNC,
-                                     final String output) {
-        if (!isNC) {
-            return CommandBuilder.builder().add(
-                    "-y", "-i", quote(input),
-                    "-filter:a",
-                    quote("atempo=" + rate),
-                    "-vn",
-                    quote(output)
-            ).build();
+    public static IOCommand rateAudio(final String input,
+                                      final String rate,
+                                      final boolean isNightcore,
+                                      final String output) {
+        if (!isNightcore) {
+            return IOCommand.builder()
+                    .isQuotePaths(true)
+                    .addGlobalFlag("-y")
+                    .inputFile(input)
+                    .outputOptions(List.of("-filter:a", "\"atempo=" + rate + "\"", "-vn"))
+                    .outputFile(output)
+                    .build();
 
-            // Primitive Nightcore
+            // Primitive Nightcore (Untested as of 19/06/2022)
         } else {
-            return CommandBuilder.builder().add(
-                    "-y", "-i", quote(input),
-                    "-filter:a",
-                    String.format("asetrate=44100*%s", rate),
-                    "-vn",
-                    quote(output)
-            ).build();
+            // todo test this
+            System.err.println("[WARNING] Producing rate command using nightcore this is experimental and may not work...");
+            return IOCommand.builder()
+                    .isQuotePaths(true)
+                    .addGlobalFlag("-y")
+                    .inputFile(input)
+                    .outputOptions(List.of("-filter:a", "\"asetrate=44100*" + rate + "\"", "-vn"))
+                    .outputFile(output)
+                    .build();
         }
     }
 
     /**
-     * Quotes the provided input string.
+     * Creates an image compression command.
      *
-     * @param a The string to quote.
-     * @return "a"
+     * @param img The image to compress.
+     * @param output The output image, note that '.jgp' is appended to the
+     * name.
+     * @return Built IOCommand.
      */
-    public static String quote(@NonNull final String a) {
-        return "\"" + a + "\"";
-    }
-
-    /**
-     * Iterates through the provided directory and all its subdirectories and
-     * for all files which are audio files (.ogg, .mp3, .wav) apply {@link
-     * #compressAudio(File)} using the provided service.
-     *
-     * @param dir The directory to search through.
-     * @param finishedHandle Called everytime a task has finished, first
-     * parameter is guaranteed to be the subject file the second parameter can
-     * be Either null indicating an Exception occurred, or a Process which is
-     * potentially complete.
-     * @param service The service to submit tasks to.
-     */
-    public static void compressAllAudio(final File dir,
-                                        final ExecutorService service,
-                                        final BiConsumer<File, Process> finishedHandle) {
-        final String[] files = {".ogg", ".mp3", ".wav"};
-        final Iterator<File> iter = FileUtils.iterateFiles(
-                dir,
-                new SuffixFileFilter(files),
-                TrueFileFilter.TRUE
-        );
-
-        while (iter.hasNext()) {
-            final File f = iter.next();
-            iter.remove();
-            service.submit(() -> {
-                try {
-                    finishedHandle.accept(f, compressAudio(f));
-                } catch (final IOException | InterruptedException e) {
-                    finishedHandle.accept(f, null);
-                }
-            });
-        }
+    public static IOCommand compressImage(final String img,
+                                          final String output) {
+        return IOCommand.builder()
+                .isQuotePaths(true)
+                .addGlobalFlag("-y")
+                .inputFile(img)
+                .outputFile(output + ".jpg")
+                .build();
     }
 }

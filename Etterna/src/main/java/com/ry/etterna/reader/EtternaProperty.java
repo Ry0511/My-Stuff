@@ -11,11 +11,9 @@ import lombok.NonNull;
 import lombok.ToString;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.ry.useful.property.NamedRegexProperty.ExtractionMode.MANY;
@@ -57,7 +55,7 @@ public enum EtternaProperty {
                     .mutateValueIf(vs -> vs.size() > 4, vs -> {
                         vs.removeLast();
                         return vs;
-                    }).mutateType(vs -> vs.toArray(new String[0]))
+                    }).mutateType(vs -> vs.toArray(String[]::new))
                     .getValue(),
             String[].class
     );
