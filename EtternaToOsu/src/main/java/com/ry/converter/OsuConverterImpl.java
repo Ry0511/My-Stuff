@@ -3,7 +3,6 @@ package com.ry.converter;
 import com.ry.etterna.EtternaFile;
 import com.ry.etterna.db.CacheDB;
 import com.ry.etterna.msd.MSD;
-import com.ry.etterna.msd.SkillSet;
 import com.ry.etterna.note.EtternaNoteInfo;
 import com.ry.etterna.util.CachedNoteInfo;
 import com.ry.etterna.util.CalculatedNoteInfo;
@@ -24,7 +23,6 @@ import lombok.extern.apachecommons.CommonsLog;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -315,8 +313,8 @@ public class OsuConverterImpl implements OsuConverter {
                 } else {
                     log.warn(String.format(
                             "Base 1.0 audio conversion exited with: %s; Cancelling conversion of ['%s' to '%s']",
-                            exit, eFile.getSmFile().getAbsolutePath(),
-                            songDir.getAbsolutePath()
+                            exit, eFile.getSmFile().getName(),
+                            songDir.getName()
                     ));
 
                     getTracker().forEachAudioListener(ls -> ls.onMalformed(
@@ -343,11 +341,11 @@ public class OsuConverterImpl implements OsuConverter {
             cmd.setListener((CompletionListener) (ignored, exit) -> {
                 if (exit != 0) {
                     log.warn(String.format(
-                            "Rated audio conversion terminated with exit '%s' "
-                                    + "this could mean that the output is malformed/broken. "
-                                    + "Please assess '%s' converted to '%s [%sx]' manually.",
-                            exit, chart.getInfo().getParent().getSmFile().getAbsolutePath(),
-                            songDir.getAbsolutePath(), chart.getRate()
+                            "Audio conversion terminated with exit '%s' that "
+                                    + "is unexpected and could mean that the audio "
+                                    + "file '%s' is broken/doesn't exist for the chart '%s'.",
+                            exit, songDir.getName() + "/" + ignored.getOutputFile(),
+                            chart.getEtternaFile().getSmFile().getName()
                     ));
 
                     getTracker().forEachAudioListener(ls -> ls.onMalformed(

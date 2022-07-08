@@ -156,8 +156,13 @@ public final class MinaCalc {
 
         public RawNotes(final EtternaNoteInfo info) {
 
-            List<Integer> notes = new ArrayList<>();
-            List<Float> times = new ArrayList<>();
+            if (!info.isDanceSingle()) {
+                throw new RuntimeException("MinaCalc only applies to Dance-Single charts.");
+            }
+
+            final int size = info.getNumRows();
+            final List<Integer> notes = new ArrayList<>(size);
+            final List<Float> times = new ArrayList<>(size);
 
             // Not fast but ehh
             final TimingSequence seq = new TimingSequence();
