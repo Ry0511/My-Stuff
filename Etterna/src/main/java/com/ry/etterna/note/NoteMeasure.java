@@ -32,20 +32,23 @@ public class NoteMeasure extends Measure<Note> implements Iterable<NoteRow> {
             noteRows[index] = NoteRow.loadFromStr(row.trim());
 
             // Set size
-            if (numCols == -1) {
-                numCols = noteRows[index].getNotes().length;
-            }
-
-            // Number of columns should stay consistent
-            if (numCols != noteRows[index].getNotes().length) {
-                throw new IllegalStateException(String.format(
-                        "Note Row Malformed expected size '%s' but got '%s'%n",
-                        numCols,
-                        noteRows[index].toString()
-                ));
-            }
+            numCols = Math.max(numCols, noteRows[index].getNotes().length);
 
             ++index;
+        }
+
+        // Re-fill the array using the fixed size column data
+        for (int i = 0; i < noteRows.length; ++i) {
+            final Note[] notes = new Note[numCols];
+            Arrays.fill(notes, new Note(NoteType.EMPTY));
+            System.arraycopy(
+                    noteRows[i].getNotes(),
+                    0,
+                    notes,
+                    0,
+                    noteRows[i].size()
+            );
+            noteRows[i] = new NoteRow(notes);
         }
 
         return new NoteMeasure(noteRows);

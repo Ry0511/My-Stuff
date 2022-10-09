@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Java class created on 08/04/2022 for usage in project FunctionalUtils.
@@ -115,10 +116,16 @@ public class NoteRow extends Row<Note> implements Iterable<Note> {
         final char note = 'x';
         final char empty = '-';
 
-        forEach(x -> sb.append(
-                (x.getStartNote().isTap() || x.getStartNote().isHoldHead())
-                ? note
-                : empty));
-        return NOTE_MAPPING.get(sb.toString());
+        // Only four notes should be assessed
+        for (int i = 0; i < 4; i++) {
+            sb.append(getNotes()[i].getStartNote().isMinaAssessedNote() ? note : empty);
+        }
+
+        final Integer v = NOTE_MAPPING.get(sb.toString());
+        if (v == null) {
+            throw new IllegalStateException("Unknown note mapping: " + sb);
+        } else {
+            return v;
+        }
     }
 }
