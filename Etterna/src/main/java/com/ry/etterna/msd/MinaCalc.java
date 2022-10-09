@@ -35,11 +35,17 @@ public final class MinaCalc {
     private static final String LIB_NAME = "MinaCalc_Native_FNUtils.dll";
 
     static {
-        init();
+        init(0);
     }
 
     // Loads the MinaDll file.
-    private static void init() {
+    private static void init(int count) {
+
+        if (count > 3) {
+            System.out.println("Failed to load MinaCalcNative.dll");
+            System.exit(-1);
+        }
+
         final URL url = MinaCalc.class.getResource(LIB_NAME);
 
         if (url != null) {
@@ -51,6 +57,11 @@ public final class MinaCalc {
                 // that can be loaded.
             } catch (final UnsatisfiedLinkError err) {
                 final File output = new File(System.getProperty("user.dir") + "/MinaCalcNative.dll");
+
+                System.out.printf("[LOAD] User Dir='%s' resolved to '%s'%n",
+                        System.getProperty("user.dir"),
+                        output.getAbsolutePath()
+                );
 
                 // The ultra omega try block
                 try {
@@ -73,10 +84,11 @@ public final class MinaCalc {
                     // This is very unlikely, but in the case the loaded one
                     // becomes invalid then we delete and retry.
                 } catch (final UnsatisfiedLinkError ex) {
+                    System.err.println(ex.getMessage());
                     if (!output.delete()) {
                         throw new Error("Couldn't delete old native file: " + output);
                     }
-                    init();
+                    init(count + 1);
                 }
             }
 
